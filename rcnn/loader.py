@@ -74,14 +74,16 @@ class ROIIter(mx.io.DataIter):
                 vert = np.logical_not(horz)
                 horz_inds = np.where(horz)[0] # 所有width>=height的行号,即图片编号
                 vert_inds = np.where(vert)[0] # 所有width<heigth的行号
+                # 对他们的索引进行随机化处理，并把他们进行列堆叠
                 inds = np.hstack((np.random.permutation(horz_inds), np.random.permutation(vert_inds))) 
                 #print inds.shape
                 inds = np.reshape(inds, (-1, 2)) # 默认有2列的二维数组
                 #print "reset"
+                # 对有2列数据的二维数组的行号进行随机
                 row_perm = np.random.permutation(np.arange(inds.shape[0]))
                 inds = np.reshape(inds[row_perm, :], (-1, ))
-                print "sfsd"
-                print inds
+                #print "sfsd"
+                #print inds
                 self.index = inds
             else:
                 np.random.shuffle(self.index)
@@ -111,6 +113,12 @@ class ROIIter(mx.io.DataIter):
     def get_batch(self):
         cur_from = self.cur
         cur_to = min(cur_from + self.batch_size, self.size)
+        print "cur_form"
+        print cur_from
+        print "cur_to"
+        print cur_to
+        # self.index 是一个一维数组，存储的是roidb的行索引号,二cur_from和cur_to存储的是
+        # index的索引号
         roidb = [self.roidb[self.index[i]] for i in range(cur_from, cur_to)]
         if self.mode == 'test':
             self.data, self.label = minibatch.get_minibatch(roidb, self.num_classes, self.mode)
@@ -126,11 +134,15 @@ class ROIIter(mx.io.DataIter):
             data_list = []
             label_list = []
             for islice in slices:
+                #print "islice"
+                #print islice
+                #print(range(islice.start, islice.stop))   # [0, 1]
                 iroidb = [roidb[i] for i in range(islice.start, islice.stop)]
                 data, label = minibatch.get_minibatch(iroidb, self.num_classes, self.mode)
                 data_list.append(data)
                 label_list.append(label)
 
+            #print "***********************"
             all_data = dict()
             for key in data_list[0].keys():
                 all_data[key] = tensor_vstack([batch[key] for batch in data_list])
@@ -213,7 +225,7 @@ class AnchorLoader(mx.io.DataIter):
             if config.TRAIN.ASPECT_GROUPING:
                 widths = np.array([r['width'] for r in self.roidb])
                 heights = np.array([r['height'] for r in self.roidb])
-                horz = (widths >= heights)
+                horz = (widths >= heights)    # 宽图
                 vert = np.logical_not(horz)
                 horz_inds = np.where(horz)[0]
                 vert_inds = np.where(vert)[0]
@@ -286,7 +298,7 @@ class AnchorLoader(mx.io.DataIter):
                 # assign anchor for label
                 label = minibatch.assign_anchor(feat_shape, label['gt_boxes'], data['im_info'],
                                                 self.feat_stride, self.anchor_scales,
-                                                self.anchor_ratios, self.allowed_border)
+                                               self.anchor_ratios, self.allowed_border)
                 del data['im_info']
                 new_label_list.append(label)
 

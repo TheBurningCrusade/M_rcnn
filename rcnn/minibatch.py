@@ -1,3 +1,4 @@
+#-*-coding:utf-8-*-
 """
 To construct data iterator from imdb, batch sampling procedure are defined here
 RPN:
@@ -43,7 +44,14 @@ def get_minibatch(roidb, num_classes, mode='test'):
     """
     # build im_array: [num_images, c, h, w]
     num_images = len(roidb)
+    # 得到一个从0到high，但不包括high的数据，大小为size， size也可以是一个多维的，比如
+    # (4,5)这样就可以得到一个(4X5）的矩阵
+
+    # print "len(config.SCALES)"
+    # print len(config.SCALES)
     random_scale_indexes = npr.randint(0, high=len(config.SCALES), size=num_images)
+    print "random_scale_indexes"
+    print random_scale_indexes
     im_array, im_scales = get_image_array(roidb, config.SCALES, random_scale_indexes)
 
     if mode == 'train':
@@ -142,8 +150,10 @@ def get_image_array(roidb, scales, scale_indexes):
         target_size = scales[scale_indexes[i]]
         im, im_scale = image_processing.resize(im, target_size, config.MAX_SIZE)
         im_tensor = image_processing.transform(im, config.PIXEL_MEANS)
+
         processed_ims.append(im_tensor)
         im_scales.append(im_scale)
+
     array = image_processing.tensor_vstack(processed_ims)
     return array, im_scales
 

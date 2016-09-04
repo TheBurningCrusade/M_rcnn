@@ -85,6 +85,9 @@ def expand_bbox_regression_targets(bbox_targets_data, num_classes):
     :return: bbox target processed [k * 4 num_classes]
     bbox_inside_weights ! only foreground boxes have bbox regression computation!
     """
+    """bbox_targets_data是一个(x,5)的二维数组，其中5个元素中，第一个是类别号，剩余4个
+    是该类别的位置（box），这里将box的数据在num_classes上进行展开，通过一个4Xnum_classes
+    的数组进行展开,类别号即是数组的索引号"""
     classes = bbox_targets_data[:, 0]
     bbox_targets = np.zeros((classes.size, 4 * num_classes), dtype=np.float32)
     bbox_inside_weights = np.zeros(bbox_targets.shape, dtype=np.float32)

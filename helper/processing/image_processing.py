@@ -1,3 +1,4 @@
+#-*-coding:utf-8-*-
 import numpy as np
 import cv2
 
@@ -35,6 +36,27 @@ def transform(im, pixel_means):
     im -= pixel_means
     im_tensor = im[np.newaxis, :]
     # put channel first
+    """
+    a = np.array([[[[11, 23, 43],
+             [12, 32, 44],
+             [88, 74, 97],
+             [91, 33, 55]],
+
+             [[66, 44, 33],
+             [23, 45, 67],
+             [97, 10, 88],
+             [13, 99, 76]]]])
+    b = a.transpose((0, 3, 1, 2))
+    b = array([[[[11, 12, 88, 91],
+             [66, 23, 97, 13]],
+             
+             [[23, 32, 74, 33],
+             [44, 45, 10, 99]],
+
+             [[43, 44, 97, 55],
+             [33, 67, 88, 76]]]])
+    a.shape = (1, 2, 4, 3)
+    b.shape = (1, 3, 2, 4)"""
     channel_swap = (0, 3, 1, 2)
     im_tensor = im_tensor.transpose(channel_swap)
     return im_tensor
@@ -67,12 +89,19 @@ def tensor_vstack(tensor_list, pad=0):
     :param pad: label to pad with
     :return: tensor with max shape
     """
+    """该函数主要功能是将tensor_list中的矩阵进行对其，对其的规则是使用某一维度下
+    各个元素在这个维度上的上的最大值，其他达不到这个最大值的元素要按这个最大维度
+    进行补齐"""
+    # print "tensor_list[0].shape"
+    # print tensor_list[0].shape
     ndim = len(tensor_list[0].shape)
     if ndim == 1:
         return np.hstack(tensor_list)
     dimensions = [0]
+    # 寻找各个维度下，各元素在这个维度的最大值
     for dim in range(1, ndim):
         dimensions.append(max([tensor.shape[dim] for tensor in tensor_list]))
+    # 使用最大维度进行补齐,这是都是单方向的补齐，往下或者往右
     for ind, tensor in enumerate(tensor_list):
         pad_shape = [(0, 0)]
         for dim in range(1, ndim):

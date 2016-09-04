@@ -8,8 +8,6 @@ def load_ss_roidb(image_set, year, root_path, devkit_path, flip=False):
     ss_roidb = voc.selective_search_roidb(gt_roidb)
     if flip:
         ss_roidb = voc.append_flipped_images(ss_roidb)
-    print "55555555555"
-    print len(ss_roidb)
     prepare_roidb(voc, ss_roidb)
     means, stds = add_bbox_regression_targets(ss_roidb)
     return voc, ss_roidb, means, stds
