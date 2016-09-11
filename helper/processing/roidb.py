@@ -72,6 +72,7 @@ def add_bbox_regression_targets(roidb):
     else:
         # compute mean, std values
         # 注意这里的规则化，是按照label进行的，每一个label都有一个规则化
+        # 这里的规则化这是对上一步生成的'bbox_targets'进行的
         class_counts = np.zeros((num_classes, 1)) + config.EPS    #(21, 1)
         sums = np.zeros((num_classes, 4))     # (21, 4)
         squared_sums = np.zeros((num_classes, 4))    # (21, 4)

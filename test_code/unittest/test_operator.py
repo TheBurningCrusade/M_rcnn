@@ -98,7 +98,9 @@ def check_slice_channel(dim, num):
     e_nd[:] = e
     print "e_nd: %s" % (e_nd.asnumpy())
     data = mx.sym.Variable('data')
+    print "num%s" % num
     op = mx.sym.SliceChannel(data=data, num_outputs=num)
+    print op.list_arguments()
     arg_shape, output_shape, aux_shape = op.infer_shape(data=e_nd.shape)
     print "arg_shape: %s" % (arg_shape,)
     print "output_shape: %s" % (output_shape,)
@@ -155,10 +157,17 @@ def check_slice_channel(dim, num):
         assert len(o_shape) == len(shape) - 1
         assert o_shape == tuple([shape[0]] + list(shape[2:]))
 
+# skip_second的意思是可以让他参加concat运算,但计算grad的时候可以不计算
 def check_concat_with_shape(shapes, dimension, skip_second):
+    print "*****************************************************"
+    
     # if skip_second is True, second argument will not have gradient.
     # it is to test #1130
+    print "shapes          %s" % shapes
+    print "dimension       %s" % dimension
+    print "skip_second        %s" % skip_second
     n = len(shapes)
+    print "n     %s" % n
     # forward
     target_dim = 0
     for shape in shapes:
@@ -167,19 +176,32 @@ def check_concat_with_shape(shapes, dimension, skip_second):
     inputs = [mx.symbol.Variable('arg%d' % i) for i in range(n)]
     out = mx.symbol.Concat(*inputs, name='conc',dim=dimension)
     arr = [mx.nd.empty(shape) for shape in shapes]
+    print "start arr"
     for i in range(n):
         arr[i][:] = shapes[i][dimension]
+        print arr[i].asnumpy()
+
+    print "end arr"
     arr_np = [np.copy(narray.asnumpy()) for narray in arr]
     arr_grad = [mx.nd.empty(shape) for shape in shapes]
     dict_grad = {}
     arg_names = out.list_arguments()
+    print "arg_names:       %s" % (arg_names,)
 
     for name, g in zip(arg_names, arr_grad):
         if not skip_second or name != 'arg1':
             dict_grad[name] = g
+        else:
+            print "woshi"
 
     args = out.list_arguments()
+
+    print "afeter arg_names:       %s" % (args,)
+    print "dict_grad:         %s" % (dict_grad,)
     arg_shapes, out_shapes, aux_shapes = out.infer_shape(**dict(zip(args, shapes)))
+    print "arg_shapes:        %s" % (arg_shapes,)
+    print "out_shapes:        %s" % (out_shapes,)
+    print "aux_shapes:        %s" % (aux_shapes,)
     out_grad = mx.nd.empty(out_shapes[0])
     exec1 = out.bind(mx.Context('cpu'),
                      args=arr,
@@ -187,6 +209,7 @@ def check_concat_with_shape(shapes, dimension, skip_second):
     exec1.forward()
     out1 = exec1.outputs[0]
     ret = np.concatenate([narray.asnumpy() for narray in arr], axis=dimension)
+    print "out1:          %s" % (out1.asnumpy())
     assert same(out1.asnumpy(), ret)
     # backward
     out1.copyto(out_grad)
@@ -198,6 +221,9 @@ def check_concat_with_shape(shapes, dimension, skip_second):
             grad = dict_grad[name]
             np_grad = arr_np[i]
             assert same(grad.asnumpy(), np_grad + 1)
+            print grad.asnumpy()
+    print "enddddddddddddddddddddddddddddddddddddddddddddddd"
+
 
 def test_concat():
     for dimension in range(4):
@@ -207,7 +233,7 @@ def test_concat():
         b = 3
         c = 4
         # test  2D
-        if dimension<2:
+        """if dimension<2:
             for dim in range(2, 6):
                 shapes = []
                 for i in range(dim):
@@ -216,7 +242,7 @@ def test_concat():
                     elif dimension == 1:
                         shapes.append((a, merge[i]))
                     check_concat_with_shape(shapes,dimension,True)
-                    check_concat_with_shape(shapes,dimension,False)
+                    check_concat_with_shape(shapes,dimension,False)"""
         #test 3D
         if dimension<3:
             for dim in range(2, 6):
@@ -231,7 +257,7 @@ def test_concat():
                 check_concat_with_shape(shapes,dimension,True)
                 check_concat_with_shape(shapes,dimension,False)
         # test 4D
-        for dim in range(2, 6):
+        """for dim in range(2, 6):
             shapes = []
             for i in range(dim):
                 if dimension == 0:
@@ -243,7 +269,7 @@ def test_concat():
                 elif dimension ==3:
                     shapes.append((a,b,c,merge[i]))
             check_concat_with_shape(shapes,dimension,True)
-            check_concat_with_shape(shapes,dimension,False)
+            check_concat_with_shape(shapes,dimension,False)"""
 
 def test_slice_channel():
     check_slice_channel(2, 4)
@@ -320,9 +346,10 @@ def check_softmax_with_shape(shape, xpu):
     # print l.asnumpy()
     l[:] = np_softmax(l.asnumpy())
     grad = mx.nd.empty(shape, ctx = xpu)
-    # print Y.list_arguments()
+    print Y.list_arguments()
     exec1 = Y.bind(xpu, args = [x, l], args_grad = {'X': grad})
-    # print Y.infer_shape()
+    #exec1 = Y.bind(xpu, args = [x, l], args_grad = [grad]) # error
+    print Y.infer_shape()
     exec1.forward()
     out = exec1.outputs[0].asnumpy()
     assert_allclose(out, np_softmax(x.asnumpy()))
@@ -1553,7 +1580,8 @@ def test_support_vector_machine_l2_svm():
 if __name__ == "__main__":
     # test_softmax()
     # test_elementwise_sum()
-    test_slice_channel()
+    # test_slice_channel()
+    test_concat()
 
 """if __name__ == '__main__':
     test_expand_dims()

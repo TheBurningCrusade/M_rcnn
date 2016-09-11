@@ -13,6 +13,14 @@ def unique_boxes(boxes, scale=1.0):
     _, index = np.unique(hashes, return_index=True)
     return np.sort(index)
 
+"""
+   ''''''''''''''''(2,3)'''''
+   ''''''''''''''''''''''''''
+   ''''''''''''''''''''''''''
+   ''''''''''''''''''''''''''
+   ''''(0,1)'''''''''''''''''
+   ''''''''''''''''''''''''''
+"""
 
 def filter_small_boxes(boxes, min_size):
     # 是图片的宽度，应该是右上减去左上

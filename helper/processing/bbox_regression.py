@@ -67,7 +67,7 @@ def compute_bbox_regression_targets(rois, overlaps, labels):
     # ex_gt_overlaps 是一个二维数组, 其中列数是gt_inds的长度, 注意列的索引和gt_inds的索引是对应的
     # gt_inds[gt_assignment] 其实就可以取出行号(overlaps)了
     gt_assignment = ex_gt_overlaps.argmax(axis=1)
-
+    # gt_rois 和 ex_rois是一样大小的，gt_rois表示的是和ex_rois重合度最高的box的数据
     gt_rois = rois[gt_inds[gt_assignment], :]
     ex_rois = rois[ex_inds, :]
 

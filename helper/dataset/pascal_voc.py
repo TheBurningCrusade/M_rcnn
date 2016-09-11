@@ -34,6 +34,7 @@ class PascalVOC(IMDB):
         self.devkit_path = devkit_path
         print "******devkit_path"
         print devkit_path
+        print "image_set:        %s" % (image_set,)
         self.data_path = os.path.join(devkit_path, 'VOC' + year)
         print "******PascalVol.data_path"
         print self.data_path
@@ -138,7 +139,9 @@ class PascalVOC(IMDB):
         # gt_classes 表示的是每个object的类别
         gt_classes = np.zeros((num_objs), dtype=np.int32)
         #这里的overlaps是这个图片上有多少个标记的object，每个object有一个num_classes=21个元素的list
-        #这个每个图像的overlaps的作用现在还不清楚
+        #在这里对它的初始化是为一个array，其中shape中行数表示的是这个图片中一共多少个被标记的位置
+        #列代表的是类别，已经定好有21个类别，会有21列，一个被标记的位置所对应的类别被标记为1.0
+        #a[1][11]=1.0 即第二个标记位置被标记为类别11
         overlaps = np.zeros((num_objs, self.num_classes), dtype=np.float32)
         #print "overlaps"
         #print overlaps
@@ -211,6 +214,14 @@ class PascalVOC(IMDB):
             # 每一维的4个元素，前两个元素代表左上的点，后两个元素代表右下的点；
             #一个点坐标的顺序是先是高度坐标，后是宽度坐标，经过以下语句变换后，则先是宽度坐标，后是高度
             boxes = raw_data[i][:, (1, 0, 3, 2)] - 1  # pascal voc dataset starts from 1.
+            """变换后的坐标:先是宽度坐标，后是高度
+                ''''''''''''''''(2,3)'''''
+                ''''''''''''''''''''''''''
+                ''''''''''''''''''''''''''
+                ''''''''''''''''''''''''''
+                ''''(0,1)'''''''''''''''''
+                ''''''''''''''''''''''''''
+            """
             # unique_boxes 返回的是boxes的索引，经过去重后的索引
             keep = unique_boxes(boxes)
             boxes = boxes[keep, :]
