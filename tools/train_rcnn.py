@@ -32,7 +32,7 @@ def train_net(image_set, year, root_path, devkit_path, pretrained, epoch,
     config.TRAIN.BATCH_SIZE *= len(ctx)
 
     # load training data
-    voc, roidb, means, stds = load_rpn_roidb(image_set, year, root_path, devkit_path, flip=True)
+    voc, roidb, means, stds = load_ss_roidb(image_set, year, root_path, devkit_path, flip=True)
     train_data = ROIIter(roidb, batch_size=config.TRAIN.BATCH_IMAGES, shuffle=True, mode='train',
                          ctx=ctx, work_load_list=work_load_list)
 

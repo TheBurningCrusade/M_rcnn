@@ -143,6 +143,9 @@ class ROIIter(mx.io.DataIter):
                 label_list.append(label)
 
             #print "***********************"
+            # data_list是一个包含字典元素的list，其中每个字典有'data' 和 'roi'
+            # 两个key，这里是将list整理成为一个字典，整理的规则是将data和roi
+            # 进行合并，生成array
             all_data = dict()
             for key in data_list[0].keys():
                 all_data[key] = tensor_vstack([batch[key] for batch in data_list])
@@ -277,6 +280,7 @@ class AnchorLoader(mx.io.DataIter):
             data_list = []
             label_list = []
             for islice in slices:
+                # 获取一个slice中包含的图片的roidb
                 iroidb = [roidb[i] for i in range(islice.start, islice.stop)]
                 data, label = minibatch.get_minibatch(iroidb, self.num_classes, self.mode)
                 data_list.append(data)

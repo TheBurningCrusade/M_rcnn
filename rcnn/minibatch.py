@@ -44,14 +44,15 @@ def get_minibatch(roidb, num_classes, mode='test'):
     """
     # build im_array: [num_images, c, h, w]
     num_images = len(roidb)
-    # 得到一个从0到high，但不包括high的数据，大小为size， size也可以是一个多维的，比如
-    # (4,5)这样就可以得到一个(4X5）的矩阵
-
+    
     # print "len(config.SCALES)"
     # print len(config.SCALES)
+    # 得到一个从0到high，但不包括high的数据，大小为size， size也可以是一个多维的，比如
+    # (4,5)这样就可以得到一个(4X5）的矩阵
     random_scale_indexes = npr.randint(0, high=len(config.SCALES), size=num_images)
     print "random_scale_indexes"
     print random_scale_indexes
+    # 得到关于一批图片的的数据（im_array）和scale比例
     im_array, im_scales = get_image_array(roidb, config.SCALES, random_scale_indexes)
 
     if mode == 'train':
@@ -79,7 +80,8 @@ def get_minibatch(roidb, num_classes, mode='test'):
         if mode == 'train':
             assert config.TRAIN.BATCH_SIZE % config.TRAIN.BATCH_IMAGES == 0, \
                 'BATCHIMAGES {} must devide BATCHSIZE {}'.format(config.TRAIN.BATCH_IMAGES, config.TRAIN.BATCH_SIZE)
-            rois_per_image = config.TRAIN.BATCH_SIZE / config.TRAIN.BATCH_IMAGES
+            rois_per_image = config.TRAIN.BATCH_SIZE / config.TRAIN.BATCH_IMAGES # 128 / 2
+            # 64 × 0.25  = 16
             fg_rois_per_image = np.round(config.TRAIN.FG_FRACTION * rois_per_image).astype(int)
 
             rois_array = list()
@@ -88,8 +90,12 @@ def get_minibatch(roidb, num_classes, mode='test'):
             bbox_inside_array = list()
 
             for im_i in range(num_images):
+                # 这里是从一副图像中筛选制定个数和配比的rois, 其中这幅图像要的得到的roi=rois_per_image=128(配置的)
+                # 其中foreground的个数=fg_rois_per_iamge; im_rois还是一个有4列元素的二维array，label是代表每个
+                # rois的类别， bbox_targets是一个有4Xn_class(21)列的二维数组
                 im_rois, labels, bbox_targets, bbox_inside_weights, overlaps = \
                     sample_rois(roidb[im_i], fg_rois_per_image, rois_per_image, num_classes)
+                    # (*, 16, 128, 21)
 
                 # project im_rois
                 # do not round roi
@@ -133,6 +139,10 @@ def get_minibatch(roidb, num_classes, mode='test'):
 
 
 def get_image_array(roidb, scales, scale_indexes):
+    # 这里scales是一个数组，而scale_indexes是一个和roidb一样大的数组，它的值是scales的索引下标
+    # 主要的功能是将一批图片转换成一个4维矩阵，其中第一维是图片的个数，第二维是代表每个像素是被
+    # 几个数值描述的，3,4维为图片的像素宽度和长度.
+    # 主要的步骤是进行图片的scale，然后统一按各维度的最大值进行补齐(补零)
     """
     build image array from specific roidb
     :param roidb: images to be processed
@@ -172,14 +182,16 @@ def sample_rois(roidb, fg_rois_per_image, rois_per_image, num_classes):
     overlaps = roidb['max_overlaps']
     rois = roidb['boxes']
 
+    #得到制定个数foreground rois
     # foreground RoI with FG_THRESH overlap
-    fg_indexes = np.where(overlaps >= config.TRAIN.FG_THRESH)[0]
+    fg_indexes = np.where(overlaps >= config.TRAIN.FG_THRESH)[0] # 0.5
     # guard against the case when an image has fewer than fg_rois_per_image foreground RoIs
     fg_rois_per_this_image = np.minimum(fg_rois_per_image, fg_indexes.size)
     # Sample foreground regions without replacement
     if fg_indexes.size > 0:
         fg_indexes = npr.choice(fg_indexes, size=fg_rois_per_this_image, replace=False)
 
+    #得到制定个数的 background rois
     # Select background RoIs as those within [BG_THRESH_LO, BG_THRESH_HI)
     bg_indexes = np.where((overlaps < config.TRAIN.BG_THRESH_HI) & (overlaps >= config.TRAIN.BG_THRESH_LO))[0]
     # Compute number of background RoIs to take from this image (guarding against there being fewer than desired)
@@ -190,6 +202,7 @@ def sample_rois(roidb, fg_rois_per_image, rois_per_image, num_classes):
         bg_indexes = npr.choice(bg_indexes, size=bg_rois_per_this_image, replace=False)
 
     # indexes selected
+    # foreground 和background组合
     keep_indexes = np.append(fg_indexes, bg_indexes)
 
     # pad more to ensure a fixed minibatch size

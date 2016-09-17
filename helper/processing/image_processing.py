@@ -18,6 +18,22 @@ def resize(im, target_size, max_size):
     # prevent bigger axis from being more than max_size:
     if np.round(im_scale * im_size_max) > max_size:
         im_scale = float(max_size) / float(im_size_max)
+    """
+    图像的几何变换：
+    常见的几何变换有缩放，仿射，透视变换，可以通过如下函数完成对图像的上述变换
+    dst = cv2.resize(src, dsize[, dst[, fx[, fy[, interpolation]]]]) 
+    dst = cv2.warpAffine(src, M, dsize[, dst[, flags[, borderMode[, borderValue]]]]) 
+    dst = cv2.warpPerspective(src, M, dsize[, dst[, flags[, borderMode[, borderValue]]]])
+    首先是缩放变换cv2.resize()
+    非关键字参数组有2个：src,dsize，分别是源图像与缩放后图像的尺寸
+    关键字参数为dst,fx,fy,interpolation
+    dst为缩放后的图像，fx,fy为图像x,y方向的缩放比例，
+    interplolation为缩放时的插值方式，有三种插值方式：
+    cv2.INTER_AREA    # 使用象素关系重采样。当图像缩小时候，该方法可以避免波纹出现。当图像放大时，类似于 CV_INTER_NN 方法　　　　
+    cv2.INTER_CUBIC　　# 立方插值
+    cv2.INTER_LINEAR  # 双线形插值　
+    cv2.INTER_NN      # 最近邻插值
+    """
     im = cv2.resize(im, None, None, fx=im_scale, fy=im_scale, interpolation=cv2.INTER_LINEAR)
     return im, im_scale
 
@@ -34,6 +50,7 @@ def transform(im, pixel_means):
     im[:, :, (0, 1, 2)] = im[:, :, (2, 1, 0)]
     im = im.astype(float)
     im -= pixel_means
+    # 这里表示的是给矩阵在最外边增加一维
     im_tensor = im[np.newaxis, :]
     # put channel first
     """
@@ -58,6 +75,9 @@ def transform(im, pixel_means):
     a.shape = (1, 2, 4, 3)
     b.shape = (1, 3, 2, 4)"""
     channel_swap = (0, 3, 1, 2)
+    # 对矩阵进行转置，转置后矩阵维度大小是(0, 3, 1, 2), 这里表示的意思是
+    # 前面新加的一维不变，图像的大小排列也不便，只是把像素的rgb三元组都进
+    # 行分开，即假设图象有（3,2），那么拆分后会有3个（3,2）
     im_tensor = im_tensor.transpose(channel_swap)
     return im_tensor
 
@@ -105,7 +125,9 @@ def tensor_vstack(tensor_list, pad=0):
     for ind, tensor in enumerate(tensor_list):
         pad_shape = [(0, 0)]
         for dim in range(1, ndim):
+            # 只在最后进行补0
             pad_shape.append((0, dimensions[dim] - tensor.shape[dim]))
         tensor_list[ind] = np.lib.pad(tensor, pad_shape, 'constant', constant_values=pad)
+    # 经过vstack，最前面的一维代表的是图片的个数
     all_tensor = np.vstack(tensor_list)
     return all_tensor

@@ -97,6 +97,6 @@ def expand_bbox_regression_targets(bbox_targets_data, num_classes):
         start = int(4 * cls)
         end = start + 4
         bbox_targets[index, start:end] = bbox_targets_data[index, 1:]
-        bbox_inside_weights[index, start:end] = config.TRAIN.BBOX_INSIDE_WEIGHTS
+        bbox_inside_weights[index, start:end] = config.TRAIN.BBOX_INSIDE_WEIGHTS # 1.0, 1.0, 1.0, 1.0
     return bbox_targets, bbox_inside_weights
 

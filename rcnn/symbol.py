@@ -97,6 +97,8 @@ def get_vgg_rcnn(num_classes=21):
     # batch_index: indicates the index of corresponding image in the input data；文档中的解释
     pool5 = mx.symbol.ROIPooling(
         name='roi_pool5', data=relu5_3, rois=rois, pooled_size=(7, 7), spatial_scale=0.0625)
+    print "lalalalallalal"
+    print pool5.infer_shape()
     # group 6
     flatten = mx.symbol.Flatten(data=pool5, name="flatten")
     fc6 = mx.symbol.FullyConnected(data=flatten, num_hidden=4096, name="fc6")

@@ -97,6 +97,6 @@ class Solver(object):
                                      kvstore=kvstore, update_on_kvstore=update_on_kvstore,
                                      train_data=train_data, eval_data=None, eval_metric=eval_metrics,
                                      epoch_end_callback=epoch_end_callback, batch_end_callback=batch_end_callback,
-                                     logger=logger, work_load_list=None, monitor=None,
-                                     mutable_data_shape=mutable_data_shape, max_data_shape=max_data_shape,
-                                     max_label_shape=max_label_shape)
+                                     logger=logger, work_load_list=None, monitor=None)
+                                     #mutable_data_shape=mutable_data_shape, max_data_shape=max_data_shape,
+                                     #max_label_shape=max_label_shape)
