@@ -469,26 +469,52 @@ def test_embedding():
     in_dim = 10
     out_dim = 4
     batch = 24
-
+    """这里的embedding标示的对one_hot类型的向量转化成制定长度的向量
+    这里的例子是输入的one_hot矩阵是24X10，将他转化成24X4的矩阵,这里使用和
+    一个10X4的参数矩阵将其点击转化 24X10 * 10X4 = 24 X 4
+    """
     data = mx.sym.Variable("data")
     embed = mx.sym.Embedding(data=data, input_dim=in_dim, output_dim=out_dim, name="embed")
     exe_test = embed.simple_bind(mx.cpu(), grad_req={'data': 'null', 'embed_weight': 'write'}, data=(batch,))
     arg_map = dict(zip(embed.list_arguments(), exe_test.arg_arrays))
+    print "arg_map"
+    print arg_map
     grad_map = dict(zip(embed.list_arguments(), exe_test.grad_arrays))
+    print "grad_map"
+    print grad_map
     np_data = np.random.randint(low=0, high=in_dim, size=batch)
+    print "np_data"
+    print np_data
     np_weight = np.random.uniform(-0.01, 0.01, arg_map["embed_weight"].shape)
     np_onehot = np.zeros((batch, in_dim))
+    print "before np_onehot"
+    print np_onehot
     np_onehot[np.arange(batch), np_data] = 1.0
+    print "after np_onehot"
+    print np_onehot
+    
     # forward
     arg_map["data"][:] = np_data
     arg_map["embed_weight"][:] = np_weight
     exe_test.forward()
+    print "np_weight"
+    print np_weight
+    print "forward outputs"
+    print exe_test.outputs[0].asnumpy()
     assert reldiff(exe_test.outputs[0].asnumpy(), np.dot(np_onehot, np_weight)) < 1e-6
     # backward
     np_grad = np.random.uniform(-1, 1, exe_test.outputs[0].shape)
     grad = mx.nd.zeros(np_grad.shape)
     grad[:] = np_grad
+
+    print "np_grad"
+    print np_grad
     exe_test.backward([grad])
+    
+    print "embed_weight"
+    print grad_map["embed_weight"].asnumpy()
+    
+
     assert reldiff(grad_map["embed_weight"].asnumpy(), np.dot(np_onehot.T, np_grad)) < 1e-6
 
 # check ops handle duplicate input correctly.
@@ -1581,7 +1607,8 @@ if __name__ == "__main__":
     # test_softmax()
     # test_elementwise_sum()
     # test_slice_channel()
-    test_concat()
+    # test_concat()
+    test_embedding()
 
 """if __name__ == '__main__':
     test_expand_dims()
