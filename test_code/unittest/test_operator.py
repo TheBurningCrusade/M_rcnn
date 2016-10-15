@@ -280,9 +280,14 @@ def check_regression(symbol, forward, backward):
     data = mx.symbol.Variable('data')
     label = mx.symbol.Variable('label')
     out = symbol(data, label)
+    print "out list_arguments: %s" % (out.list_arguments()) 
     shape = (3, 1)
     arr_data = mx.random.uniform(-1, 1, shape)
+    # 注意arr_data是一个二维数组,(3,1)
+    print "arr_data.asnumpy: %s" % (arr_data.asnumpy())
     arr_label = mx.random.uniform(0, 1, shape[0])
+    # 注意这里在经过regression之后，label的结果是一个1维数组(3,)
+    print "arr_label.asnumpy: %s" % (arr_label.asnumpy())
     arr_grad = mx.nd.empty(shape)
     exec1 = out.bind(mx.cpu(),
                      args=[arr_data, arr_label],
@@ -300,6 +305,8 @@ def test_regression():
     check_regression(mx.symbol.LogisticRegressionOutput,
                      lambda x: 1.0 / (1.0 + np.exp(-x)),
                      lambda x, y : x - y)
+    # LinearRegressionOutput这个函数的输入和输出没有改变，只是将维度改变了一下，由
+    # 二维改变成一维
     check_regression(mx.symbol.LinearRegressionOutput,
                      lambda x: x,
                      lambda x, y : x - y)
@@ -317,22 +324,35 @@ def check_softmax_with_ignore_label(xpu):
     x[:] = x_np
     l[:] = l_np
 
+    print "x_np: %s" % (x_np)
+    """这里需要注意一下，对于一个矩阵softmaxOutput的输出也是一个矩阵(20,10)，而这里的label
+    却是一个一维矩阵，只有20个元素。这里的解释是我们使用了一种默认的编码方式，将label进行
+    了压缩，比如如果label中有一个元素为2，那么它代表的向量为(0,0,1,0,0,0,0,0,0,0),这样label
+    中的10个元素的最大值为9，代表的是一个类别，这样label就会变成一个二维的one_hot矩阵，使用它
+    和softmaxOutPut计算出来的值计算残差,
+    这里有一点不太明白，如果label中有一个元素为0,则代表该向量是0向量，为什么它的残差都是0呢, 
+    是不是因为一共有0代表不属于任何类别，所以残差为0"""
+    print "l_np: %s" % (l_np)
+
     grad = mx.nd.empty(shape, ctx = xpu)
 
     exec1 = Y.bind(xpu, args = [x, l], args_grad = {'X': grad})
     exec1.forward()
+    print "exec1 output: %s" % (exec1.outputs[0].asnumpy())
     exec1.backward()
 
     grad0 = grad.asnumpy()
+    print "grad0: %s" % (grad0)
 
     for i in range(int(shape[0]/2)):
         l_np[i] = 0
     l[:] = l_np
-
+    print "after change l_np: %s" % (l_np)
     exec1.forward()
     exec1.backward()
     grad1 = grad.asnumpy()
 
+    print "0 label, grad1: %s" % grad1[:int(shape[0]/2)]
     assert(abs(np.sum(grad1[:int(shape[0]/2)])) < 1e-5)
     assert(reldiff(grad0[int(shape[0]/2):], grad1[int(shape[0]/2):]) < 1e-5)
 
@@ -384,12 +404,20 @@ def test_python_op():
     x = mx.ndarray.ones((10))*10
     dx = mx.ndarray.zeros((10))
     dy = mx.ndarray.ones((10))
+
+    print "x: %s" % (x.asnumpy())
+    print "dx: %s" % (dx.asnumpy())
+    print "dy: %s" % (dy.asnumpy())
+
     exec1 = s.bind(mx.cpu(), args=[x], args_grad = {'X': dx})
     exec1.forward()
     assert reldiff(x.asnumpy(), exec1.outputs[0].asnumpy()) < 1e-5
     exec1.backward(dy)
     assert reldiff(dy.asnumpy(), dx.asnumpy()) < 1e-5
-
+    print "x: %s" % (x.asnumpy())
+    print "dx: %s" % (dx.asnumpy())
+    print "dy: %s" % (dy.asnumpy())
+    
 def test_swapaxes():
     data = mx.symbol.Variable('data')
     shape = (2, 3, 4)
@@ -1608,6 +1636,8 @@ if __name__ == "__main__":
     # test_elementwise_sum()
     # test_slice_channel()
     # test_concat()
+    # test_regression()
+    # check_softmax_with_ignore_label(mx.cpu())
     test_embedding()
 
 """if __name__ == '__main__':
