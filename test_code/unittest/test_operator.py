@@ -424,6 +424,7 @@ def test_swapaxes():
     data_tmp = np.ones(shape)
     data_tmp[0] = 1
     data_tmp[1] = 2
+    print "data_tmp: %s" % (data_tmp)
     arr_data = mx.nd.array(data_tmp)
     swap0 = mx.symbol.SwapAxis(data=data, dim1=0, dim2=2)
     swap = mx.symbol.SwapAxis(data=swap0, dim1=1, dim2=2)
@@ -432,28 +433,41 @@ def test_swapaxes():
     out = exe_c.outputs[0].asnumpy()
 
     swap0_ = np.swapaxes(data_tmp, 0, 2)
+    print "swap0: %s" % (swap0_)
     swap_ = np.swapaxes(swap0_, 1, 2)
+    print "swap_: %s" % (swap_)
 
     assert reldiff(out, swap_) < 1e-6
 
 def test_scalarop():
+    """主要功能是对symboli的forward和backward进行验证
+    """
     data = mx.symbol.Variable('data')
     shape = (3, 4)
     data_tmp = np.ones(shape)*5
+    # print "data_tmp: %s" % (4-(1+data_tmp+1)*2/5-0.2)
+    print "data_tmp: %s" % (data_tmp)
     arr_data = mx.nd.array(data_tmp)
     arr_grad = mx.nd.empty(shape)
     arr_grad[:]=3
 
+    """如果test表示的是一个对data的函数的话，那么对data的求导为
+    4.0/5 * 1.0/x*x （其中x=(4-((1+data+1)*2/5)-0.2) 就是分母部分）
+    """
     test = 2 / (4-((1+data+1)*2/5)-0.2)
 
     npout_1 = (4-((1+data_tmp+1)*2/5)-0.2)
+    print "npout_1: %s" % (npout_1)
     npout = 2/npout_1
 
     check_symbolic_forward(test, [data_tmp], [npout])
 
     npout_grad = 2.*2/5
+    print "before npout_grad: %s" % (npout_grad)
     npout_grad = 2*npout_grad /(npout_1 *npout_1 )
+    print "after npout_grad: %s" % (npout_grad)
 
+    # 这里假设已知的残差为np.ones(shape)*2， 即一个元素都等于2的3X4矩阵
     check_symbolic_backward(test, [data_tmp], [np.ones(shape)*2], [npout_grad])
 
 
@@ -490,6 +504,7 @@ def test_pow_fn():
     y = mx.sym.pow(2, exp)
     x = np.ones(shape)*3
     check_numeric_gradient(y, [x])
+    # 对2**x， 即对2的x次方求导
     check_symbolic_forward(y, [x], [2**x])
     check_symbolic_backward(y, [x], [np.ones(shape)], [np.log(2) * 2**x])
 
@@ -503,17 +518,23 @@ def test_embedding():
     """
     data = mx.sym.Variable("data")
     embed = mx.sym.Embedding(data=data, input_dim=in_dim, output_dim=out_dim, name="embed")
+    # write 表明在更新权值的时候使用写入覆盖的方式
     exe_test = embed.simple_bind(mx.cpu(), grad_req={'data': 'null', 'embed_weight': 'write'}, data=(batch,))
+    print "embedding list_arguments: %s" % (embed.list_arguments())
     arg_map = dict(zip(embed.list_arguments(), exe_test.arg_arrays))
     print "arg_map"
     print arg_map
+
     grad_map = dict(zip(embed.list_arguments(), exe_test.grad_arrays))
     print "grad_map"
     print grad_map
+
     np_data = np.random.randint(low=0, high=in_dim, size=batch)
     print "np_data"
     print np_data
+
     np_weight = np.random.uniform(-0.01, 0.01, arg_map["embed_weight"].shape)
+
     np_onehot = np.zeros((batch, in_dim))
     print "before np_onehot"
     print np_onehot
@@ -537,12 +558,12 @@ def test_embedding():
 
     print "np_grad"
     print np_grad
+    # 这里计算的偏导是对embedding_weight而言的，不是对data
     exe_test.backward([grad])
     
-    print "embed_weight"
+    print "grad embed_weight"
     print grad_map["embed_weight"].asnumpy()
     
-
     assert reldiff(grad_map["embed_weight"].asnumpy(), np.dot(np_onehot.T, np_grad)) < 1e-6
 
 # check ops handle duplicate input correctly.
@@ -558,9 +579,13 @@ def test_binary_op_duplicate_input():
     out_grad[:] = 1
     square = data * data
     exe_square = square.bind(mx.cpu(), args=[arr_data], args_grad=[arr_grad])
+    #exe_square = square.bind(mx.cpu(), args=[arr_data])
     exe_square.forward()
+
     assert reldiff(exe_square.outputs[0].asnumpy(), data_tmp * data_tmp) < 1e-6
+    print "before backward arr_grad: %s" % (arr_grad.asnumpy())
     exe_square.backward(out_grad)
+    print "after backward arr_grad: %s" % (arr_grad.asnumpy())
     assert reldiff(arr_grad.asnumpy(), 2.0 * data_tmp) < 1e-6
 
 def test_sign():
@@ -576,7 +601,9 @@ def test_sign():
     exe_test = test.bind(mx.cpu(), args=[arr_data], args_grad=[arr_grad])
     exe_test.forward()
     out = exe_test.outputs[0].asnumpy()
+    print "data_tmp: %s" % (data_tmp)
     npout = np.sign(data_tmp)
+    print "npout: %s" % (npout)
     assert reldiff(out, npout) < 1e-6
 
     out_grad = mx.nd.empty(shape)
@@ -584,6 +611,8 @@ def test_sign():
     npout_grad = out_grad.asnumpy()
     npout_grad = 0;
     exe_test.backward(out_grad)
+    # sign 的含义是-1 if x < 0, 0 if x==0, 1 if x > 0
+    # 所以对它的求导就是0
     assert reldiff(arr_grad.asnumpy(), npout_grad) < 1e-6
 
 def test_round_ceil_floor():
@@ -595,6 +624,15 @@ def test_round_ceil_floor():
     arr_grad = mx.nd.empty(shape)
     arr_grad[:]= 2
 
+    # round：四舍五入,0.5=0; 
+
+    # >>> a = np.array([-1.7, -1.5, -0.2, 0.2, 1.5, 1.7, 2.0])
+    # >>> np.ceil(a)
+    # array([-1., -1., -0.,  1.,  2.,  2.,  2.])
+    
+    # >>> a = np.array([-1.7, -1.5, -0.2, 0.2, 1.5, 1.7, 2.0])
+    # >>> np.floor(a)
+    # array([-2., -2., -1.,  0.,  1.,  1.,  2.])
     test = mx.sym.round(data) + mx.sym.ceil(data) +  mx.sym.floor(data)
     exe_test = test.bind(mx.cpu(), args=[arr_data])
     exe_test.forward()
@@ -621,6 +659,7 @@ def test_rsqrt_cos_sin():
     out_grad = mx.nd.empty(shape)
     out_grad[:] = 2;
     npout_grad = out_grad.asnumpy()
+    # sin(x)的导数是cos(x);   cos(x)的导数是-sin(x)
     npout_grad = npout_grad * -(1.0 / (2.0 * data_tmp * np.sqrt(data_tmp))) + npout_grad * -1 * np.sin(data_tmp) + npout_grad * np.cos(data_tmp)
     exe_test.backward(out_grad)
     assert reldiff(arr_grad.asnumpy(), npout_grad) < 1e-6
@@ -641,7 +680,7 @@ def test_maximum_minimum():
     arr_grad1 = mx.nd.empty(shape)
     arr_grad2 = mx.nd.empty(shape)
 
-
+    # 这里是maximum 和minimum 两个函数组成的函数
     test =  mx.sym.maximum(data1,data2) + mx.sym.minimum(data1,data2);
     exe_test = test.bind(mx.cpu(), args=[arr_data1,arr_data2], args_grad=[arr_grad1,arr_grad2])
     exe_test.forward()
@@ -1638,7 +1677,11 @@ if __name__ == "__main__":
     # test_concat()
     # test_regression()
     # check_softmax_with_ignore_label(mx.cpu())
-    test_embedding()
+    # test_embedding()
+    # test_swapaxes()
+    # test_scalarop()
+    # test_binary_op_duplicate_input()
+    test_sign()
 
 """if __name__ == '__main__':
     test_expand_dims()
