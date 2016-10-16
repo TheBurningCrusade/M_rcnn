@@ -45,7 +45,7 @@ def get_minibatch(roidb, num_classes, mode='test'):
     # build im_array: [num_images, c, h, w]
     num_images = len(roidb)
     
-    # print "len(config.SCALES)"
+    print "len(config.SCALES): %s" % (len(config.SCALES))
     # print len(config.SCALES)
     # 得到一个从0到high，但不包括high的数据，大小为size， size也可以是一个多维的，比如
     # (4,5)这样就可以得到一个(4X5）的矩阵

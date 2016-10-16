@@ -126,16 +126,19 @@ class ROIIter(mx.io.DataIter):
             work_load_list = self.work_load_list
             ctx = self.ctx
             if work_load_list is None:
+                print "work_load_list is None"
                 work_load_list = [1] * len(ctx)
             assert isinstance(work_load_list, list) and len(work_load_list) == len(ctx), \
                 "Invalid settings for work load. "
             slices = _split_input_slice(self.batch_size, work_load_list)
 
+            print "length slices: %s" % (len(slices))
+
             data_list = []
             label_list = []
             for islice in slices:
-                #print "islice"
-                #print islice
+                #print "islice: %s" % (islice)
+
                 #print(range(islice.start, islice.stop))   # [0, 1]
                 iroidb = [roidb[i] for i in range(islice.start, islice.stop)]
                 data, label = minibatch.get_minibatch(iroidb, self.num_classes, self.mode)
