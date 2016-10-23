@@ -55,6 +55,8 @@ class Solver(object):
 
         aux_names = self.symbol.list_auxiliary_states()
         self.aux_names = aux_names
+        print "aux_names: %s" % (aux_names)
+        print "self.param_names: %s" % (self.param_names)
 
     def check_params(self):
         arg_names = set(self.symbol.list_arguments())

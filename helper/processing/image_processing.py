@@ -127,6 +127,7 @@ def tensor_vstack(tensor_list, pad=0):
         for dim in range(1, ndim):
             # 只在最后进行补0
             pad_shape.append((0, dimensions[dim] - tensor.shape[dim]))
+        # pad_shape是一个还有两个元素的tuple表示开始补几个，结尾补几个
         tensor_list[ind] = np.lib.pad(tensor, pad_shape, 'constant', constant_values=pad)
     # 经过vstack，最前面的一维代表的是图片的个数
     all_tensor = np.vstack(tensor_list)

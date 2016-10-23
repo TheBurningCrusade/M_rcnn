@@ -41,13 +41,14 @@ class ROIIter(mx.io.DataIter):
         self.batch = None
         self.data = None
         self.label = None
-        self.get_batch()
+        self.get_batch() # get_batch的主要目的就是对,ROIIter中的data和label进行赋值
         self.data_name = ['data', 'rois']
         self.label_name = ['label', 'bbox_target', 'bbox_inside_weight', 'bbox_outside_weight']
 
     @property
     def provide_data(self):
         if self.mode == 'train':
+            # 得到data和rois的大小
             return [('data', self.data[0].shape), ('rois', self.data[1].shape)]
         else:
             return [(k, v.shape) for k, v in self.data.items()]
@@ -63,6 +64,7 @@ class ROIIter(mx.io.DataIter):
             return [(k, v.shape) for k, v in self.data.items()]
 
     def reset(self):
+        # 这里只是对index中存储的索引进行了随机化没有改变roidb
         self.cur = 0
         if self.shuffle:
             if config.TRAIN.ASPECT_GROUPING:
@@ -79,7 +81,7 @@ class ROIIter(mx.io.DataIter):
                 #print inds.shape
                 inds = np.reshape(inds, (-1, 2)) # 默认有2列的二维数组
                 #print "reset"
-                # 对有2列数据的二维数组的行号进行随机
+                #对有2列数据的二维数组的行号进行随机
                 row_perm = np.random.permutation(np.arange(inds.shape[0]))
                 inds = np.reshape(inds[row_perm, :], (-1, ))
                 #print "sfsd"

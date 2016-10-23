@@ -45,7 +45,7 @@ def get_minibatch(roidb, num_classes, mode='test'):
     # build im_array: [num_images, c, h, w]
     num_images = len(roidb)
     
-    print "len(config.SCALES): %s" % (len(config.SCALES))
+    print "len(config.SCALES): %s" % (len(config.SCALES)) #config.SCALES=(600, )
     # print len(config.SCALES)
     # 得到一个从0到high，但不包括high的数据，大小为size， size也可以是一个多维的，比如
     # (4,5)这样就可以得到一个(4X5）的矩阵
@@ -114,6 +114,10 @@ def get_minibatch(roidb, num_classes, mode='test'):
             bbox_targets_array = np.array(bbox_targets_array)
             bbox_inside_array = np.array(bbox_inside_array)
             bbox_outside_array = np.array(bbox_inside_array > 0).astype(np.float32)
+            #print "bbox_inside_array: %s" % (bbox_inside_array)
+            #print "bbox_outside_array: %s" % (bbox_outside_array)
+            if np.array_equal(bbox_inside_array,bbox_outside_array):
+                print "init bbox_inside_array equal bbox_outside_array"
 
             data = {'data': im_array,
                     'rois': rois_array}
@@ -158,7 +162,10 @@ def get_image_array(roidb, scales, scale_indexes):
         if roidb[i]['flipped']:
             im = im[:, ::-1, :]
         target_size = scales[scale_indexes[i]]
-        im, im_scale = image_processing.resize(im, target_size, config.MAX_SIZE)
+        # 对图片进行缩放
+        im, im_scale = image_processing.resize(im, target_size, config.MAX_SIZE) #config.MAX_SIZE = 1000
+        # config.PIXEL_MEANS = np.array([[[123.68, 116.779, 103.939]]])
+        # 对像素值去均值，然后增加一维，用于存储图片的个数
         im_tensor = image_processing.transform(im, config.PIXEL_MEANS)
 
         processed_ims.append(im_tensor)
