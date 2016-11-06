@@ -8,7 +8,7 @@ import mxnet as mx
 
 cao= mx.symbol.Variable(name="dd", shape=(2, 4, 3, 4))
 aa = mx.symbol.Flatten(data=cao, name="flatten")
-print aa.infer_shape()
+print "test Flatten: %s" % (aa.infer_shape(),)
 
 data = mx.symbol.Variable(name="data", shape=(2L, 3L, 600L, 901L))
 rois = mx.symbol.Variable(name='rois', shape=(2L, 64L, 5L))
@@ -27,6 +27,7 @@ bbox_outside_weight = mx.symbol.Reshape(data=bbox_outside_weight, shape=(-1, 4 *
 
 
 conv1_1 = mx.symbol.Convolution(data=data, kernel=(3, 3), pad=(1, 1), num_filter=64, name="conv1_1")
+print "conv1_1: %s" % (conv1_1.infer_shape(),)
 #arg_shapes, out_shapes, aux_shapes =conv1_1.infer_shape()
 relu1_1 = mx.symbol.Activation(data=conv1_1, act_type="relu", name="relu1_1")
 #relu1_1.list_arguments()

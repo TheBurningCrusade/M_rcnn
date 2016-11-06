@@ -21,6 +21,7 @@ class ROIIter(mx.io.DataIter):
         """
         super(ROIIter, self).__init__()
 
+        #roidb是个list，每个元素代表一个图片中所需要的全部信息
         self.roidb = roidb
         self.batch_size = batch_size
         self.shuffle = shuffle
@@ -158,6 +159,13 @@ class ROIIter(mx.io.DataIter):
             all_label = dict()
             for key in label_list[0].keys():
                 all_label[key] = tensor_vstack([batch[key] for batch in label_list])
+
+            print "all_data['data'] shape: %s" % (all_data['data'].shape,)
+            print "all_data['rois'] shape: %s" % (all_data['rois'].shape,)
+            print "all_data['label'] shape: %s" % (all_label['label'].shape,)
+            print "all_label['bbox_target'] shape: %s" % (all_label['bbox_target'].shape,)
+            print "all_label['bbox_inside_weigth'] shape: %s" % (all_label['bbox_inside_weight'].shape,)
+            print "all_label['bbox_outside_weght'] shape: %s" % (all_label['bbox_outside_weight'].shape,)
 
             self.data = [mx.nd.array(all_data['data']),
                          mx.nd.array(all_data['rois'])]

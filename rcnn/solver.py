@@ -36,6 +36,7 @@ class Solver(object):
         self.param_names = None
         self.aux_names = None
 
+    # 这里是对参数进行筛选
     def get_params(self, grad_req, data_shapes):
         arg_names = self.symbol.list_arguments()
         self.arg_names = arg_names
@@ -68,6 +69,11 @@ class Solver(object):
             grad_req='write',
             frequent=20,
             logger=None):
+        # 使用arg_params构建kvscore，arg_param, arg_param除了从load_param读取的参数之外
+        # 还加入了4个参数，arg_params["cls_score_weight"], arg_params["cls_score_bias"],
+        # arg_params["bbox_pred_bias"], arg_params["bbox_pred_weight"] 这应该是所有再训练
+        # 过程中需要更新的参数了(需要确认一下)，注意这里的arg_params是一个字典，key是参数名
+        # value就是参数的值，是在训练开始之前已经实例化好的
         (kvstore, update_on_kvstore) = mx.model._create_kvstore(self.kv_store, len(self.ctx), self.arg_params)
         if logger is None:
             logger = logging

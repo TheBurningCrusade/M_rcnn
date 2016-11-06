@@ -49,6 +49,7 @@ def get_minibatch(roidb, num_classes, mode='test'):
     # print len(config.SCALES)
     # 得到一个从0到high，但不包括high的数据，大小为size， size也可以是一个多维的，比如
     # (4,5)这样就可以得到一个(4X5）的矩阵
+    # 在这里的主要目的是为每一个图像获得一个随机缩放的比例
     random_scale_indexes = npr.randint(0, high=len(config.SCALES), size=num_images)
     print "random_scale_indexes"
     print random_scale_indexes

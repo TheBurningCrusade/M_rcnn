@@ -1,3 +1,4 @@
+#-*-coding=utf-8-*-
 import mxnet as mx
 import numpy as np
 
@@ -12,7 +13,7 @@ class AccuracyMetric(mx.metric.EvalMetric):
         self.has_rpn = config.TRAIN.HAS_RPN
         if self.has_rpn:
             assert self.use_ignore and self.ignore is not None
-
+    # 根据labels 和 preds计算准确率
     def update(self, labels, preds):
         if self.has_rpn:
             pred_label = mx.ndarray.argmax_channel(preds[0]).asnumpy().astype('int32')
@@ -21,8 +22,10 @@ class AccuracyMetric(mx.metric.EvalMetric):
             pred_label = pred_label[non_ignore_inds]
             label = label[non_ignore_inds]
         else:
-            last_dim = preds[0].shape[-1]
+            last_dim = preds[0].shape[-1] #一个实例的在各个类上的预测值
+            # 预测值最大的数值所在的索引即为该预测类别的标号
             pred_label = preds[0].asnumpy().reshape(-1, last_dim).argmax(axis=1).astype('int32')
+            # 扁平化类别编号
             label = labels[0].asnumpy().reshape(-1,).astype('int32')
 
         self.sum_metric += (pred_label.flat == label.flat).sum()
@@ -49,8 +52,15 @@ class LogLossMetric(mx.metric.EvalMetric):
             last_dim = preds[0].shape[-1]
             pred_cls = preds[0].asnumpy().reshape(-1, last_dim)
             label = labels[0].asnumpy().reshape(-1,).astype('int32')
+            # 每个label中的一个元素对应于pred_cls中的一行，其中label的值，和pred_cls中一行数据下标对应
+            """
+            a=np.array([[1,2,5],[4,6,7]])
+            la=np.array([1,0])
+            cls=a[np.arange(la.shape[0],la)]
+            cls的结果:arrany([2,4])
+            """
             cls = pred_cls[np.arange(label.shape[0]), label]
-        cls += config.EPS
+        cls += config.EPS #1e-14
         cls_loss = -1 * np.log(cls)
         cls_loss = np.sum(cls_loss)
         self.sum_metric += cls_loss
