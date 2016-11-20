@@ -49,6 +49,7 @@ def transform(im, pixel_means):
     im = im.copy()
     im[:, :, (0, 1, 2)] = im[:, :, (2, 1, 0)]
     im = im.astype(float)
+    # config.PIXEL_MEANS = np.array([[[123.68, 116.779, 103.939]]])
     im -= pixel_means
     # 这里表示的是给矩阵在最外边增加一维
     im_tensor = im[np.newaxis, :]
