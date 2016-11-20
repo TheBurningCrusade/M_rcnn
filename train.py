@@ -39,7 +39,23 @@ def train_net(image_set, year, root_path, devkit_path, pretrained, epoch,
 
     # load pretrained
     args, auxs = load_param(pretrained, epoch, convert=True)
+    print  "load_param's argument key"
+    test_arg_name = []
+    for k, v in args.items():
+        test_arg_name.append(k)
+        print "%s" % (k)
+
     print args
+    print "end load_param's"
+    for i in sym.list_arguments():
+        print i
+
+    """itest_arg_name1 = []
+    for i in sym.list_arguments():
+        if i != "data":
+            test_arg_name1.append(i)
+    if sorted(test_arg_name1) == sorted(test_arg_name):
+        print "load param and list_argument is equal"  """
 
     # initialize params
     if not resume:

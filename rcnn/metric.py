@@ -77,6 +77,7 @@ class SmoothL1LossMetric(mx.metric.EvalMetric):
         if self.has_rpn:
             bbox_loss = bbox_loss.reshape((bbox_loss.shape[0], -1))
         else:
+            # 注意bbox_loss
             first_dim = bbox_loss.shape[0] * bbox_loss.shape[1]
             bbox_loss = bbox_loss.reshape(first_dim, -1)
         self.num_inst += bbox_loss.shape[0]

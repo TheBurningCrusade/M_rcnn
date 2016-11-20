@@ -119,7 +119,8 @@ def get_minibatch(roidb, num_classes, mode='test'):
             #print "bbox_outside_array: %s" % (bbox_outside_array)
             if np.array_equal(bbox_inside_array,bbox_outside_array):
                 print "init bbox_inside_array equal bbox_outside_array"
-
+            # 这里的rois是包含5列的一个二维数组，其中第一列用来表示图片，比如如果他是第一个
+            # 图片的rois那么就是0，第二个就是1
             data = {'data': im_array,
                     'rois': rois_array}
             label = {'label': labels_array,

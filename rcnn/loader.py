@@ -114,6 +114,7 @@ class ROIIter(mx.io.DataIter):
             return 0
 
     def get_batch(self):
+        # cur_from 和 cur/cur_to都是以图片为单位的
         cur_from = self.cur
         cur_to = min(cur_from + self.batch_size, self.size)
         print "cur_form"
@@ -144,6 +145,10 @@ class ROIIter(mx.io.DataIter):
 
                 #print(range(islice.start, islice.stop))   # [0, 1]
                 iroidb = [roidb[i] for i in range(islice.start, islice.stop)]
+                # 这里将分片之后的iroidb传入get_minibatch里面，iroidb是一个list
+                """
+
+                """
                 data, label = minibatch.get_minibatch(iroidb, self.num_classes, self.mode)
                 data_list.append(data)
                 label_list.append(label)
