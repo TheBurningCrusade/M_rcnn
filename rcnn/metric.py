@@ -73,6 +73,8 @@ class SmoothL1LossMetric(mx.metric.EvalMetric):
         self.has_rpn = config.TRAIN.HAS_RPN
 
     def update(self, labels, preds):
+        # preds 是一个[batch_size=2, -1, 21*4=84]的一个3维数组，其中第一维代表的是几个
+        # 图片，第二维是一个图片上的rois，第三个是回归位置值
         bbox_loss = preds[1].asnumpy()
         if self.has_rpn:
             bbox_loss = bbox_loss.reshape((bbox_loss.shape[0], -1))
