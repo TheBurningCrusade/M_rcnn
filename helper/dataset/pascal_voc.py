@@ -108,6 +108,7 @@ class PascalVOC(IMDB):
         """
         gt_roidb(list): 一个元素的存储结构如下
         {'boxes': array([[ 68, 171, 269, 329], [149, 140, 228, 283], [284, 200, 326, 330], [257, 197, 296, 328]], dtype=uint16), 'flipped': False, 'gt_classes': array([13, 15, 15, 15], dtype=int32), 'gt_overlaps': <4x21 sparse matrix of type '<type 'numpy.float32'>'with 4 stored elements in Compressed Sparse Row format>}
+        其中gt_overlaps是一个二维数组，行数表示的是一个图片中物体(object)的个数，列数表示的是分类的个数，这里有21类
         """
         gt_roidb = [self.load_pascal_annotation(index) for index in self.image_set_index]
         with open(cache_file, 'wb') as fid:
