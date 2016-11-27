@@ -121,6 +121,13 @@ def get_minibatch(roidb, num_classes, mode='test'):
                 print "init bbox_inside_array equal bbox_outside_array"
             # 这里的rois是包含5列的一个二维数组，其中第一列用来表示图片，比如如果他是第一个
             # 图片的rois那么就是0，第二个就是1
+            """
+            这里每张图片的rois_array, bbox_targets_array, bbox_inside_array, bbox_outside_array 
+            都是一个二维数组，其中它们的行数代表的就是一张图片的rois的个数，把上述这些数据都分别
+            存到各自的list当中，其中list的长度即代表图片的个数。然后用np.array将list转化成array，
+            注意这里转化成array之后，数据会增加一维，其中的个数转化后数组的第一维，相当于list的
+            长度, labels_array是一个一维数组，转化后成为2维数据，第一维也是代表图片个数
+            """
             data = {'data': im_array,
                     'rois': rois_array}
             label = {'label': labels_array,

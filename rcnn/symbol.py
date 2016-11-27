@@ -82,7 +82,8 @@ def get_vgg_rcnn(num_classes=21):
     bbox_outside_weight = mx.symbol.Variable(name='bbox_outside_weight')
 
     # reshape input
-    # 这里是将输入和输出都reshape成二维的矩阵
+    # 这里是将输入和输出都reshape成二维的矩阵, 注意这里把并没有把图片的数据data进行
+    # 展平，它依旧是一个4维数据，第一维代表的是一个batch里面图片的个数
     rois = mx.symbol.Reshape(data=rois, shape=(-1, 5), name='rois_reshape')
     label = mx.symbol.Reshape(data=label, shape=(-1, ), name='label_reshape')
     bbox_target = mx.symbol.Reshape(data=bbox_target, shape=(-1, 4 * num_classes), name='bbox_target_reshape')
