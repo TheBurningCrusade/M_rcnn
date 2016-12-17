@@ -15,6 +15,7 @@ def np_softmax(x):
     #print np.max(x, axis=1)
     #print x
     #print (x - np.max(x, axis=1).reshape(x.shape[0], 1))
+    # 对x二维数组的每一个元素减去他们所在行的最大的元素
     x = x - np.max(x, axis=1).reshape(x.shape[0], 1)
     x = np.exp(x)
     x /= np.sum(x, axis=1).reshape(x.shape[0], 1)
@@ -289,12 +290,16 @@ def check_regression(symbol, forward, backward):
     # 注意这里在经过regression之后，label的结果是一个1维数组(3,)
     print "arr_label.asnumpy: %s" % (arr_label.asnumpy())
     arr_grad = mx.nd.empty(shape)
+    print "shape arr_data: %s" % (str(arr_data.shape))
+    print "shape arr_label: %s" % (str(arr_label.shape))
     exec1 = out.bind(mx.cpu(),
                      args=[arr_data, arr_label],
                      args_grad={"data" : arr_grad})
     exec1.forward()
     out1 = exec1.outputs[0].asnumpy()
     npout = forward(arr_data.asnumpy())
+    print "npput after forward: %s" % (npout)
+    print "out1: %s" % (out1)
     assert reldiff(npout, out1) < 1e-6
 
     exec1.backward()
@@ -329,9 +334,13 @@ def check_softmax_with_ignore_label(xpu):
     却是一个一维矩阵，只有20个元素。这里的解释是我们使用了一种默认的编码方式，将label进行
     了压缩，比如如果label中有一个元素为2，那么它代表的向量为(0,0,1,0,0,0,0,0,0,0),这样label
     中的10个元素的最大值为9，代表的是一个类别，这样label就会变成一个二维的one_hot矩阵，使用它
-    和softmaxOutPut计算出来的值计算残差,
-    这里有一点不太明白，如果label中有一个元素为0,则代表该向量是0向量，为什么它的残差都是0呢, 
-    是不是因为一共有0代表不属于任何类别，所以残差为0"""
+    和softmaxOutPut计算出来的值计算残差"""
+    
+    """这里有一点不太明白，如果label中有一个元素为0,则代表该向量是0向量，为什么它的残差都是0呢, 
+    是不是因为一共有0代表不属于任何类别，所以残差为0。注意上述解释是不对的，label等于0的残差
+    是因为我们在mx.symbol.SoftmaxOutput的参数中设置了ignore_label=0，所以等于0的残差的计算就被
+    忽略了，置为0"""
+
     print "l_np: %s" % (l_np)
 
     grad = mx.nd.empty(shape, ctx = xpu)
@@ -385,15 +394,52 @@ def check_multi_softmax_with_shape(shape, xpu):
     X = mx.symbol.Variable('X')
     L = mx.symbol.Variable('L')
     Y = mx.symbol.SoftmaxOutput(data=X, label=L, multi_output=True)
+    """x
+    [[[ 0.09762704  0.18568921  0.43037868  0.68853152]
+     [ 0.20552671  0.71589124  0.08976638  0.69450343]
+     [-0.15269041  0.24712741  0.29178822 -0.23123658]]
+
+     [[-0.1248256  -0.40493077  0.78354597 -0.88657403]
+     [ 0.92732549 -0.45468742 -0.23311698 -0.04466975]
+     [ 0.58345008  0.62433743  0.0577898  -0.04004568]]]
+    """
     x = mx.random.uniform(-1, 1, shape, ctx = xpu)
+    print "x: %s" % (x.asnumpy())
     l = mx.nd.empty((shape[0], shape[2]), ctx = xpu)
+    """l
+    这里是用第二维作为类的标记，可以标记0,1,2
+
+    [[ 1.  1.  1.  1.]
+     [ 1.  1.  0.  1.]]
+    """
+    # 这里减去了1，使原来为3维的类标记只能标记2维
     l[:] = np.random.randint(0, shape[1]-1, (shape[0], shape[2]))
+    print "l: %s" % (l.asnumpy())
     grad = mx.nd.empty(shape, ctx = xpu)
+    print "before grad: %s" % (grad.asnumpy())
 
     exec1 = Y.bind(xpu, args = [x, l], args_grad = {'X': grad})
     exec1.forward()
+    """ outputs[0]
+    [[[ 0.34572291  0.26577079  0.38730878  0.41586936]
+     [ 0.38511318  0.45161784  0.27550617  0.41836032]
+     [ 0.26916382  0.28261131  0.33718503  0.16577029]]
+
+    [[ 0.16965567  0.21050514  0.54178262  0.17691849]
+     [ 0.48586068  0.20028743  0.1960171   0.41058928]
+     [ 0.34448361  0.58920741  0.2622003   0.41249228]]]
+    """
     print(exec1.outputs[0].asnumpy())
     exec1.backward()
+    """grad.asnumpy()
+    [[[ 0.08643073  0.0664427   0.09682719  0.10396734]
+     [-0.15372171 -0.13709554 -0.18112347 -0.14540991]
+     [ 0.06729095  0.07065283  0.08429626  0.04144257]]
+
+    [[ 0.04241392  0.05262629 -0.11455435  0.04422962]
+     [-0.12853482 -0.19992813  0.04900428 -0.14735268]
+     [ 0.0861209   0.14730185  0.06555007  0.10312307]]]
+    """
     print(grad.asnumpy())
 
 def test_python_op():
@@ -1677,11 +1723,12 @@ if __name__ == "__main__":
     # test_concat()
     # test_regression()
     # check_softmax_with_ignore_label(mx.cpu())
+    check_multi_softmax_with_shape((2,3,4), mx.cpu())
     # test_embedding()
     # test_swapaxes()
     # test_scalarop()
     # test_binary_op_duplicate_input()
-    test_sign()
+    # test_sign()
 
 """if __name__ == '__main__':
     test_expand_dims()
