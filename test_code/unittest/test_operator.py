@@ -1014,12 +1014,18 @@ def test_batchnorm_training():
         data = mx.symbol.Variable('data')
         test = mx.symbol.BatchNorm(data, fix_gamma=False)
 
+        """
         args_name = test.list_arguments()
-        args_shape, output_shape, _ = test.infer_shape(data=data_tmp.shape)
+        print "dd"
+        print args_name"""
+        arr_data = mx.nd.array(data_tmp)
+        args_shape, output_shape, aux = test.infer_shape(data=data_tmp.shape)
+        print "aux: %s" % (aux)
         print "args_shape: %s" % str(args_shape)
         print "output_shape: %s" % str(output_shape)
         #print args_name
-        #test_e = test.bind(mx.cpu(), args= args_grad=)
+        #grad_nd = [mx.nd.empty(shape) for shape in [(2,3), (3), (3)]] 
+        #test_e = test.bind(mx.cpu(), args=[arr_data, mx.nd.array(gamma), mx.nd.array(beta)], args_grad=grad_nd)
         #conv.bind(mx.cpu(), args=conv_args, args_grad=conv_args_grad)
 
         print "data_tmp: %s" % (data_tmp)
@@ -1027,7 +1033,7 @@ def test_batchnorm_training():
         print "beta: %s" % (str(beta))
         print "rolling_mean: %s" % (rolling_mean)
         print "rolling_std: %s" % (rolling_std)
-        #check_numeric_gradient(test, [data_tmp, gamma, beta], [rolling_mean, rolling_std], numeric_eps=1e-3, check_eps=5e-2)
+        check_numeric_gradient(test, [data_tmp, gamma, beta], [rolling_mean, rolling_std], numeric_eps=1e-3, check_eps=5e-2)
 
 def test_convolution_grouping():
     num_filter = 4
