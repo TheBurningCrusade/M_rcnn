@@ -486,7 +486,7 @@ def test_swapaxes():
     assert reldiff(out, swap_) < 1e-6
 
 def test_scalarop():
-    """主要功能是对symboli的forward和backward进行验证
+    """主要功能是对symbol的forward和backward进行验证
     """
     data = mx.symbol.Variable('data')
     shape = (3, 4)
@@ -505,15 +505,20 @@ def test_scalarop():
     npout_1 = (4-((1+data_tmp+1)*2/5)-0.2)
     print "npout_1: %s" % (npout_1)
     npout = 2/npout_1
-
+    #check_symboli_forward使用的3个参数，其中test应该是symbolic
+    #data_tmp相当于bind中的args即具体的收入，npout是验证数据，和
+    #test算出的值是相等的
     check_symbolic_forward(test, [data_tmp], [npout])
 
     npout_grad = 2.*2/5
     print "before npout_grad: %s" % (npout_grad)
+    print "before npout_1: %s" % (npout_1)
     npout_grad = 2*npout_grad /(npout_1 *npout_1 )
     print "after npout_grad: %s" % (npout_grad)
 
     # 这里假设已知的残差为np.ones(shape)*2， 即一个元素都等于2的3X4矩阵
+    # 注意这里对data_tmp求偏导后，要在对应的偏导值后面乘以残差，这里残差
+    # 是元素都为2的矩阵，所以=2 * 4.0/5 * 1.0/x*x
     check_symbolic_backward(test, [data_tmp], [np.ones(shape)*2], [npout_grad])
 
 
@@ -540,8 +545,14 @@ def test_symbol_pow():
     check_numeric_gradient(test, [data_tmp, exp_tmp])
     check_symbolic_forward(test, [data_tmp, exp_tmp], [data_tmp**exp_tmp])
 
+    # 对test中的data进行求偏导
     data_dir = data_tmp**(exp_tmp - 1) * exp_tmp
+    # 对test中的exp进行求偏导
     exp_dir = data_tmp**(exp_tmp) * np.log(data_tmp)
+
+    # check_symbolic_backward可以验证各个变量的求导结果
+    # 第一个变量是操作公式，第二个是制定对那个变量求偏导（可以制定多个）
+    # 第三个是残差，第4个是各个变量求偏导的结果，和第2个变量是对应的
     check_symbolic_backward(test, [data_tmp, exp_tmp], [np.ones(shape)], [data_dir, exp_dir])
 
 def test_pow_fn():
@@ -605,6 +616,9 @@ def test_embedding():
     print "np_grad"
     print np_grad
     # 这里计算的偏导是对embedding_weight而言的，不是对data
+    # 这里的np_grad就是残差，这里残差在实际的应用中代表的是经过embediong
+    # 之后计算的输出结果和真正的结果之间的差值，它本身就是一个偏导值，对
+    # 1./2.0 *(pre -label)**2求偏导的值，然后使用它去反向传播去更新embed_weight
     exe_test.backward([grad])
     
     print "grad embed_weight"
@@ -620,7 +634,8 @@ def test_binary_op_duplicate_input():
     data_tmp[:] = 5
     arr_data = mx.nd.array(data_tmp)
     arr_grad = mx.nd.empty(shape)
-    arr_grad[:] = 3
+    # 这里的赋值不会没有作用，参数的偏导值会被覆盖
+    arr_grad[:] = 9
     out_grad = mx.nd.empty(shape)
     out_grad[:] = 1
     square = data * data
@@ -757,6 +772,7 @@ def test_maximum_minimum_scalar():
     arr_data1 = mx.nd.array(data_tmp1)
     arr_grad1 = mx.nd.empty(shape)
 
+    # 注意maximum函数中前后两个变量的顺序，他和mask1,mask2,mask3,mask4是对应的
     test =  mx.sym.maximum(data1,3) + mx.sym.maximum(9,data1) + mx.sym.minimum(5,data1) + mx.sym.minimum(data1,4)
     exe_test = test.bind(mx.cpu(), args=[arr_data1], args_grad=[arr_grad1])
     exe_test.forward()
@@ -771,6 +787,7 @@ def test_maximum_minimum_scalar():
     npout_grad = np.ones(shape)
     npout_grad[:] = 2
     mask1 = (data_tmp1 > 3).astype('float')
+    # 这里9在前面和mx.sybolic.maximum是对应的
     mask2 = (9 > data_tmp1).astype('float')
     mask3 = (5 < data_tmp1).astype('float')
     mask4 = (data_tmp1 < 4).astype('float')
@@ -819,14 +836,27 @@ def check_deconvolution_forward_backward(input_shape, num_filter, kernel, stride
         num_filter=num_filter, no_bias = "true", name = "deconv")
 
     arg_names = deconv.list_arguments()
+    print "arg_names: %s" % (arg_names)
+
     arg_shapes, out_shapes, _ = deconv.infer_shape(data=input_shape)
+    print "arg_shapes: %s" % (arg_shapes)
+    print "out_shapes: %s" % (out_shapes)
+
     input_data = mx.random.uniform(-5, 5, input_shape)
     out_grad = input_data
     args = {}
     args["data"] = input_data
+    # mx.random.normal的前两个参数制定随机值的范围，后一个参数制定数据维度
+    # (num_filter, input_shape[1]) + kernel 这里相加的是两个tuple,结果仍是一个tuple
     args['conv_weight'] = args['deconv_weight'] = mx.random.normal(0, 1,
         (num_filter, input_shape[1]) + kernel)
+
+    print "args['conv_weight']: %s" % (args["conv_weight"].asnumpy())
+    # arg_shapes（参数大小）和arg_names（参数名）的排列是对应的，
     args_grad = [mx.nd.empty(s) for s in arg_shapes]
+    
+    for s in args_grad:
+        print "args_grad: %s" % (s.asnumpy())
 
     exe = deconv.bind(mx.cpu(), args=args, args_grad=args_grad)
     exe.forward()
@@ -844,6 +874,8 @@ def check_deconvolution_gradient(input_shape, num_filter, pad):
     """
     stride = (1, 1)
     kernel = (2*pad[0]+1, 2*pad[1]+1)
+    print "kernel: %s" % (str(kernel))
+    print "num_filter: %s" % (num_filter)
     data_conv = mx.sym.Variable(name="data_conv")
     conv = mx.sym.Convolution(
         data=data_conv, kernel=kernel, stride=stride, pad=pad,
@@ -855,15 +887,20 @@ def check_deconvolution_gradient(input_shape, num_filter, pad):
 
     conv_data = mx.random.uniform(-5, 5, input_shape)
     conv_args = {}
+    # 这里的data_conv和mx.sym.Variable(name="data_conv")是对应的
+    #print "xx: %s" % (str((num_filter, input_shape[1]) + kernel)))
+    print ((num_filter, input_shape[1]) + kernel)
     conv_args["data_conv"] = conv_data
     conv_args['conv_weight'] = \
         mx.random.normal(0, 1,(num_filter, input_shape[1]) + kernel)
     conv_args_grad = [mx.nd.zeros(conv_data.shape),
         mx.nd.zeros((num_filter, input_shape[1]) + kernel)]
     exe_conv = conv.bind(mx.cpu(), args=conv_args, args_grad=conv_args_grad)
+    print "exe_conv outputs: %s" % (str(exe_conv.outputs[0].asnumpy().shape))
     conv_out_grad = mx.random.normal(0, 2, exe_conv.outputs[0].shape)
     exe_conv.backward(conv_out_grad)
 
+    # 使用上面随机的残差当做解就卷积的输入
     deconv_data = conv_out_grad
     deconv_args = {}
     deconv_args['data_deconv'] = deconv_data
@@ -871,6 +908,7 @@ def check_deconvolution_gradient(input_shape, num_filter, pad):
     deconv_args_grad = [mx.nd.zeros(deconv_data.shape),
         mx.nd.zeros((num_filter, input_shape[1]) + kernel)]
     exe_deconv = deconv.bind(mx.cpu(), args=deconv_args, args_grad=deconv_args_grad)
+    # 使用上面卷积的输入作为残差
     deconv_out_grad = conv_data[:]
     exe_deconv.backward(deconv_out_grad)
     assert reldiff(conv_args_grad[1].asnumpy(), deconv_args_grad[1].asnumpy()) < 1e-6
@@ -933,16 +971,21 @@ def test_deconvolution():
     )
 
 def check_nearest_upsampling_with_shape(shapes, scale, root_scale):
+    print "**************start**************"
     arr = {'arg_%d'%i: mx.random.uniform(-10.0, 10.0, shape) for i, shape in zip(range(len(shapes)), shapes)}
+    for k,v in arr.items():
+        print "%s\t%s\t%s" % (k, str(v.asnumpy().shape), v.asnumpy())
     arr_grad = {'arg_%d'%i: mx.nd.zeros(shape) for i, shape in zip(range(len(shapes)), shapes)}
 
     up = mx.sym.UpSampling(*[mx.sym.Variable('arg_%d'%i) for i in range(len(shapes))], sample_type='nearest', scale=root_scale)
     exe = up.bind(mx.cpu(), args=arr, args_grad=arr_grad)
     exe.forward(is_train=True)
+    print  "outputs: %s\t%s" % (str(exe.outputs[0].asnumpy().shape), exe.outputs[0].asnumpy())
     exe.backward(exe.outputs)
     for k in range(len(shapes)):
         name = 'arg_%d'%k
         assert_allclose(arr[name].asnumpy()*root_scale**2*scale**(2*k), arr_grad[name].asnumpy(), rtol=1e-4)
+    print "***************end****************"
 
 
 def test_nearest_upsampling():
@@ -961,6 +1004,9 @@ def test_batchnorm_training():
         beta = np.ones(s)
         gamma[1] = 3
         beta[0] = 3
+        print "s: %s" % str(s)
+       
+       
 
         rolling_mean = np.random.uniform(size=s)
         rolling_std = np.random.uniform(size=s)
@@ -968,7 +1014,20 @@ def test_batchnorm_training():
         data = mx.symbol.Variable('data')
         test = mx.symbol.BatchNorm(data, fix_gamma=False)
 
-        check_numeric_gradient(test, [data_tmp, gamma, beta], [rolling_mean, rolling_std], numeric_eps=1e-3, check_eps=5e-2)
+        args_name = test.list_arguments()
+        args_shape, output_shape, _ = test.infer_shape(data=data_tmp.shape)
+        print "args_shape: %s" % str(args_shape)
+        print "output_shape: %s" % str(output_shape)
+        #print args_name
+        #test_e = test.bind(mx.cpu(), args= args_grad=)
+        #conv.bind(mx.cpu(), args=conv_args, args_grad=conv_args_grad)
+
+        print "data_tmp: %s" % (data_tmp)
+        print "gamma: %s" % (str(gamma))
+        print "beta: %s" % (str(beta))
+        print "rolling_mean: %s" % (rolling_mean)
+        print "rolling_std: %s" % (rolling_std)
+        #check_numeric_gradient(test, [data_tmp, gamma, beta], [rolling_mean, rolling_std], numeric_eps=1e-3, check_eps=5e-2)
 
 def test_convolution_grouping():
     num_filter = 4
@@ -1723,12 +1782,48 @@ if __name__ == "__main__":
     # test_concat()
     # test_regression()
     # check_softmax_with_ignore_label(mx.cpu())
-    check_multi_softmax_with_shape((2,3,4), mx.cpu())
+    # check_multi_softmax_with_shape((2,3,4), mx.cpu())
     # test_embedding()
     # test_swapaxes()
     # test_scalarop()
     # test_binary_op_duplicate_input()
     # test_sign()
+    # test_python_op()
+    """check_deconvolution_forward_backward(
+        input_shape         = (1,1,5,5),
+        num_filter          = 1,
+        kernel              = (3,3),
+        stride              = (1,1),
+        pad                 = (1,1)
+    )"""
+    """check_deconvolution_forward_backward(
+        input_shape         = (32,3,28,28),
+        num_filter          = 3,
+        kernel              = (3,3),
+        stride              = (1,1),
+        pad                 = (1,1)
+    )"""
+    """check_deconvolution_forward_backward(
+        input_shape         = (10, 3, 403, 403),
+        num_filter          = 3,
+        kernel              = (7,7),
+        stride              = (5,5),
+        pad                 = (2,2)
+    )"""
+    """check_deconvolution_gradient(
+        input_shape = (1,3,5,5),
+        num_filter = 3,
+        pad = (1,1)
+    )"""
+    """check_deconvolution_gradient(
+        input_shape = (5,3,100,100),
+        num_filter = 3,
+        pad = (3,3)
+    )"""
+    # test_nearest_upsampling()
+    test_batchnorm_training()
+
+
 
 """if __name__ == '__main__':
     test_expand_dims()
