@@ -985,6 +985,14 @@ def check_nearest_upsampling_with_shape(shapes, scale, root_scale):
         print "%s\t%s\t%s" % (k, str(v.asnumpy().shape), v.asnumpy())
     arr_grad = {'arg_%d'%i: mx.nd.zeros(shape) for i, shape in zip(range(len(shapes)), shapes)}
 
+    """UpSampling 的第一个参数是一个列表，即上采样的输入，这里输入是一个4维矩阵列表，
+    最后两维最大作作为上采样的输出维度比如有([1,3,12,12], [1,3,3,3], [1,3,6,6]) 那么
+    输出为[1,9,12,12]，这第一个输入等于输出，其他两个按照'nearest'的规则进行上采样，
+    规则是对一个元素按照制定的输出进行复制，比如第一个矩阵保持不变，第二个每个元素
+    复制4次，构成[1,3,12,12],第三个复制2次。
+    在制定残差后，backward则将残差进行下采样操作，比如一个[1,3,12,12]中的元素都是
+    1，那么[1,3,3,3]的梯度为[1,3,3,3]其中每个元素都是4
+    """
     up = mx.sym.UpSampling(*[mx.sym.Variable('arg_%d'%i) for i in range(len(shapes))], sample_type='nearest', scale=root_scale)
     exe = up.bind(mx.cpu(), args=arr, args_grad=arr_grad)
     exe.forward(is_train=True)
@@ -1019,19 +1027,21 @@ def test_batchnorm_training():
         gamma[1] = 3
         beta[0] = 3
         print "s: %s" % str(s)
+        print "gamma: %s" % (gamma)
+        print "beta: %s" % (beta)
        
-       
-
         rolling_mean = np.random.uniform(size=s)
         rolling_std = np.random.uniform(size=s)
+        
+        print "rolling_mean: %s" % (rolling_mean)
+        print "rolling_std: %s" % (rolling_std)
 
         data = mx.symbol.Variable('data')
         test = mx.symbol.BatchNorm(data, fix_gamma=False)
 
-        """
         args_name = test.list_arguments()
-        print "dd"
-        print args_name"""
+        print "args_name: %s" % (args_name)
+
         arr_data = mx.nd.array(data_tmp)
         args_shape, output_shape, aux = test.infer_shape(data=data_tmp.shape)
         print "aux: %s" % (aux)
@@ -1047,7 +1057,9 @@ def test_batchnorm_training():
         print "beta: %s" % (str(beta))
         print "rolling_mean: %s" % (rolling_mean)
         print "rolling_std: %s" % (rolling_std)
+        #rval = (inputs - mean)*(gamma/std) + beta
         check_numeric_gradient(test, [data_tmp, gamma, beta], [rolling_mean, rolling_std], numeric_eps=1e-3, check_eps=5e-2)
+        print "************************************"
 
 def test_convolution_grouping():
     num_filter = 4
@@ -1840,8 +1852,8 @@ if __name__ == "__main__":
         num_filter = 3,
         pad = (3,3)
     )"""
-    test_nearest_upsampling()
-    # test_batchnorm_training()
+    # test_nearest_upsampling()
+    test_batchnorm_training()
 
 
 
