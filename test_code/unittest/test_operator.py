@@ -862,6 +862,9 @@ def check_deconvolution_forward_backward(input_shape, num_filter, kernel, stride
     exe.forward()
     out = exe.outputs[0].asnumpy()
     exe.backward(out_grad)
+    # 在初始化的时候kernel的梯度不一样，在经过backward之后，conv和deconv的梯度相同
+    for s in args_grad:
+        print "args_grad: %s" % (s.asnumpy())
     assert reldiff(out, args_grad[0].asnumpy()) < 1e-6
 
 def check_deconvolution_gradient(input_shape, num_filter, pad):
@@ -900,15 +903,16 @@ def check_deconvolution_gradient(input_shape, num_filter, pad):
     conv_out_grad = mx.random.normal(0, 2, exe_conv.outputs[0].shape)
     exe_conv.backward(conv_out_grad)
 
-    # 使用上面随机的残差当做解就卷积的输入
+    # 1.使用上面随机的残差当做解就卷积的输入
     deconv_data = conv_out_grad
     deconv_args = {}
     deconv_args['data_deconv'] = deconv_data
+    # 2.保证conv和deconv使用的kernel相同
     deconv_args['deconv_weight'] = conv_args['conv_weight']
     deconv_args_grad = [mx.nd.zeros(deconv_data.shape),
         mx.nd.zeros((num_filter, input_shape[1]) + kernel)]
     exe_deconv = deconv.bind(mx.cpu(), args=deconv_args, args_grad=deconv_args_grad)
-    # 使用上面卷积的输入作为残差
+    # 3.使用上面卷积的输入作为残差
     deconv_out_grad = conv_data[:]
     exe_deconv.backward(deconv_out_grad)
     assert reldiff(conv_args_grad[1].asnumpy(), deconv_args_grad[1].asnumpy()) < 1e-6
@@ -972,6 +976,10 @@ def test_deconvolution():
 
 def check_nearest_upsampling_with_shape(shapes, scale, root_scale):
     print "**************start**************"
+    print "shapes: %s" % (shapes)
+    print "scale: %s" % (scale)
+    print "root_scale: %s" % (root_scale)
+
     arr = {'arg_%d'%i: mx.random.uniform(-10.0, 10.0, shape) for i, shape in zip(range(len(shapes)), shapes)}
     for k,v in arr.items():
         print "%s\t%s\t%s" % (k, str(v.asnumpy().shape), v.asnumpy())
@@ -980,11 +988,17 @@ def check_nearest_upsampling_with_shape(shapes, scale, root_scale):
     up = mx.sym.UpSampling(*[mx.sym.Variable('arg_%d'%i) for i in range(len(shapes))], sample_type='nearest', scale=root_scale)
     exe = up.bind(mx.cpu(), args=arr, args_grad=arr_grad)
     exe.forward(is_train=True)
+    print "outputs len: %s" % (len(exe.outputs))
     print  "outputs: %s\t%s" % (str(exe.outputs[0].asnumpy().shape), exe.outputs[0].asnumpy())
     exe.backward(exe.outputs)
     for k in range(len(shapes)):
         name = 'arg_%d'%k
         assert_allclose(arr[name].asnumpy()*root_scale**2*scale**(2*k), arr_grad[name].asnumpy(), rtol=1e-4)
+        print "---------"
+        print "origin arg_%d: %s" % (k, arr[name].asnumpy())
+        print "arg_%d: %s" % (k, arr[name].asnumpy()*root_scale**2*scale**(2*k))
+        print "arr_grad: %s" % (arr_grad[name].asnumpy())
+        print "---------"
     print "***************end****************"
 
 
@@ -1826,8 +1840,8 @@ if __name__ == "__main__":
         num_filter = 3,
         pad = (3,3)
     )"""
-    # test_nearest_upsampling()
-    test_batchnorm_training()
+    test_nearest_upsampling()
+    # test_batchnorm_training()
 
 
 
