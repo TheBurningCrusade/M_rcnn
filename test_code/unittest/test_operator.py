@@ -580,7 +580,9 @@ def test_embedding():
     print "embedding list_arguments: %s" % (embed.list_arguments())
     arg_map = dict(zip(embed.list_arguments(), exe_test.arg_arrays))
     print "arg_map"
-    print arg_map
+    # print arg_map
+    for k,v in arg_map.items():
+        print "name: %s|shape: %s" % (k, str(v.shape))
 
     grad_map = dict(zip(embed.list_arguments(), exe_test.grad_arrays))
     print "grad_map"
@@ -818,6 +820,29 @@ def test_abs():
     exe_test.backward(out_grad)
     assert reldiff(arr_grad.asnumpy(), npout_grad) < 1e-6
 
+
+def test_convolution(input_shape, num_filter, kernel, stride, pad):
+    assert input_shape[1] == num_filter
+    data = mx.sym.Variable(name="data")
+    conv = mx.sym.Convolution(data=data, kernel=kernel, stride=stride, pad=pad,
+            num_filter=num_filter, no_bias="true", name="conv")
+
+    arg_names = conv.list_arguments()
+    print "arg_names: %s" % (arg_names)
+
+    args_shapes, out_shapes, _ = conv.infer_shape(data=input_shape)
+    print "args_shapes: %s" % (args_shapes)
+    print "out_shapes: %s" % (out_shapes)
+    input_data = mx.random.uniform(-5, 5, input_shape)
+
+    args = {}
+    args["data"] = input_data
+    args['conv_weight'] = mx.random.normal(0, 1, (num_filter, input_shape[1]) + kernel)
+    # args_grad = [mx.nd.empty(s) for s in arg_shapes]
+    # exe = conv.bind(mx.cpu(), args=args, args_grad=args_grad)
+    exe = conv.bind(mx.cpu(), args=args)
+    exe.forward()
+
 def check_deconvolution_forward_backward(input_shape, num_filter, kernel, stride, pad):
     """configure A: input --> conv --> deconv --> output.
        the convolution and deconvoluiton has similar parameter which ensure
@@ -848,6 +873,7 @@ def check_deconvolution_forward_backward(input_shape, num_filter, kernel, stride
     args["data"] = input_data
     # mx.random.normal的前两个参数制定随机值的范围，后一个参数制定数据维度
     # (num_filter, input_shape[1]) + kernel 这里相加的是两个tuple,结果仍是一个tuple
+    # 注意convolution和deconvolution使用的kernel的值是一样的
     args['conv_weight'] = args['deconv_weight'] = mx.random.normal(0, 1,
         (num_filter, input_shape[1]) + kernel)
 
@@ -856,7 +882,8 @@ def check_deconvolution_forward_backward(input_shape, num_filter, kernel, stride
     args_grad = [mx.nd.empty(s) for s in arg_shapes]
     
     for s in args_grad:
-        print "args_grad: %s" % (s.asnumpy())
+        # print "args_grad: %s" % (s.asnumpy())
+        print "args_grad shape: %s" % (str(s.asnumpy().shape))
 
     exe = deconv.bind(mx.cpu(), args=args, args_grad=args_grad)
     exe.forward()
@@ -879,6 +906,9 @@ def check_deconvolution_gradient(input_shape, num_filter, pad):
     kernel = (2*pad[0]+1, 2*pad[1]+1)
     print "kernel: %s" % (str(kernel))
     print "num_filter: %s" % (num_filter)
+    print "pad: %s" % (str(pad))
+    print "input_shape: %s" % (str(input_shape))
+
     data_conv = mx.sym.Variable(name="data_conv")
     conv = mx.sym.Convolution(
         data=data_conv, kernel=kernel, stride=stride, pad=pad,
@@ -1815,7 +1845,7 @@ if __name__ == "__main__":
     # test_regression()
     # check_softmax_with_ignore_label(mx.cpu())
     # check_multi_softmax_with_shape((2,3,4), mx.cpu())
-    # test_embedding()
+    test_embedding()
     # test_swapaxes()
     # test_scalarop()
     # test_binary_op_duplicate_input()
@@ -1842,6 +1872,13 @@ if __name__ == "__main__":
         stride              = (5,5),
         pad                 = (2,2)
     )"""
+    """test_convolution(
+        input_shape         = (10, 3, 403, 403),
+        num_filter          = 3,
+        kernel              = (7,7),
+        stride              = (5,5),
+        pad                 = (2,2)
+    )"""
     """check_deconvolution_gradient(
         input_shape = (1,3,5,5),
         num_filter = 3,
@@ -1853,7 +1890,7 @@ if __name__ == "__main__":
         pad = (3,3)
     )"""
     # test_nearest_upsampling()
-    test_batchnorm_training()
+    # test_batchnorm_training()
 
 
 
