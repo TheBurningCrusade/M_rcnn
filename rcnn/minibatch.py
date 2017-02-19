@@ -62,6 +62,7 @@ def get_minibatch(roidb, num_classes, mode='test'):
         cfg_key = 'TEST'
 
     if config[cfg_key].HAS_RPN:
+        print "has rpn token"
         assert len(roidb) == 1, 'Single batch only'
         assert len(im_scales) == 1, 'Single batch only'
         im_info = np.array([[im_array.shape[2], im_array.shape[3], im_scales[0]]], dtype=np.float32)

@@ -80,10 +80,11 @@ class ROIIter(mx.io.DataIter):
                 # 对他们的索引进行随机化处理，并把他们进行列堆叠
                 inds = np.hstack((np.random.permutation(horz_inds), np.random.permutation(vert_inds))) 
                 #print inds.shape
-                inds = np.reshape(inds, (-1, 2)) # 默认有2列的二维数组
+                inds = np.reshape(inds, (-1, 2)) # 默认有2列的二维数组,inds是2维数组
                 #print "reset"
-                #对有2列数据的二维数组的行号进行随机
+                # 对有2列数据的二维数组的行号进行随机
                 row_perm = np.random.permutation(np.arange(inds.shape[0]))
+                # 把inds展开成一个一维数组
                 inds = np.reshape(inds[row_perm, :], (-1, ))
                 #print "sfsd"
                 #print inds
@@ -197,8 +198,10 @@ class AnchorLoader(mx.io.DataIter):
         super(AnchorLoader, self).__init__()
 
         self.feat_sym = feat_sym
-        self.roidb = roidb
+        # roidb 是一个list，每一个元素代表一张图片，每张图的信息用dict存储
+        self.roidb = roidb 
         self.batch_size = batch_size
+        print "AnchorLoader's batch size: %d" % (batch_size)
         self.shuffle = shuffle
         self.mode = mode
         self.ctx = ctx
@@ -293,12 +296,33 @@ class AnchorLoader(mx.io.DataIter):
                 work_load_list = [1] * len(ctx)
             assert isinstance(work_load_list, list) and len(work_load_list) == len(ctx), \
                 "Invalid settings for work load. "
+            # _split_input_slice这个函数返回一个list，其中每个元素的类型为slice
+            # slice是一个三元组(start, stop, 未知(None有时取这个值)), 这里应该
+            # 是为每个显卡分配一个含有batch_size个数据集, 即如果有3个显卡，那么
+            # 将返回一个3个slice组成的list，其中每个slice中包含一个batch的数据索引
             slices = _split_input_slice(self.batch_size, work_load_list)
+            print "slices: %s" % (str(slices))
+            # print "type slices: %s" % (type(slices))
+            print "slices len: %s" % (str(len(slices)))
 
             data_list = []
             label_list = []
             for islice in slices:
                 # 获取一个slice中包含的图片的roidb
+                """
+                slices: [slice(0, 1, None)]
+                slices len: 1
+                slicing-----
+                slices list: [0]
+                slice start: 0
+                slice end: 1"""
+
+                """
+                print "slicing-----"
+                print "slices list: %s" % (str(range(islice.start, islice.stop)))
+                print "slice start: %s" % (str(islice.start))
+                print "slice end: %s" % (str(islice.stop))"""
+
                 iroidb = [roidb[i] for i in range(islice.start, islice.stop)]
                 data, label = minibatch.get_minibatch(iroidb, self.num_classes, self.mode)
                 data_list.append(data)
@@ -306,8 +330,16 @@ class AnchorLoader(mx.io.DataIter):
 
             # pad data first and then assign anchor (read label)
             data_tensor = tensor_vstack([batch['data'] for batch in data_list])
+            #print "data_tensor type: %s" % (type(data_tensor)) # numpy.ndarray
+            print "data_tensor shape: %s" % (str(data_tensor.shape))
+            data_test = [batch['data'] for batch in data_list]
+            print "data_tensor element's shape: %s" % (str(data_test[0].shape))
+
+            # print "data_list len: %s" % (str(len(data_list)))
             for data, data_pad in zip(data_list, data_tensor):
+                print "data_pad shape %s" % (str(data_pad.shape))
                 data['data'] = data_pad[np.newaxis, :]
+                print "data[data] shape: %s" % (str(data["data"].shape))
 
             new_label_list = []
             for data, label in zip(data_list, label_list):

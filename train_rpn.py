@@ -33,11 +33,14 @@ def train_net(image_set, year, root_path, devkit_path, pretrained, epoch,
     print "feat_sys: %s" % (feat_sym.list_arguments())
 
     # setup multi-gpu
-    config.TRAIN.BATCH_IMAGES *= len(ctx) #BATCH_IMAGES = 2
+    config.TRAIN.BATCH_IMAGES *= len(ctx)
+    # BATCH_IMAGES = 2
+    print "batch images %s" % (str(config.TRAIN.BATCH_IMAGES))
     config.TRAIN.BATCH_SIZE *= len(ctx) #BATCH_SIZE = 1
 
     # load training data
     voc, roidb = load_gt_roidb(image_set, year, root_path, devkit_path, flip=True)
+    # print "batch_size: %s" % (str(config.TRAIN.BATCH_SIZE))
     train_data = AnchorLoader(feat_sym, roidb, batch_size=config.TRAIN.BATCH_SIZE, shuffle=True, mode='train',
                               ctx=ctx, work_load_list=work_load_list)
 
