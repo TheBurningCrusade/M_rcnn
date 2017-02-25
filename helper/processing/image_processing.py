@@ -12,6 +12,7 @@ def resize(im, target_size, max_size):
     :return:
     """
     im_shape = im.shape
+    print "cv2 imread shape: %s" % (str(im_shape))
     im_size_min = np.min(im_shape[0:2])
     im_size_max = np.max(im_shape[0:2])
     im_scale = float(target_size) / float(im_size_min)

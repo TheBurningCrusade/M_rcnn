@@ -65,6 +65,10 @@ def get_minibatch(roidb, num_classes, mode='test'):
         print "has rpn token"
         assert len(roidb) == 1, 'Single batch only'
         assert len(im_scales) == 1, 'Single batch only'
+
+        print "len(roidb): %s" % (str(len(roidb)))
+        print "len(im_scales): %s" % (str(len(im_scales)))
+
         im_info = np.array([[im_array.shape[2], im_array.shape[3], im_scales[0]]], dtype=np.float32)
 
         data = {'data': im_array,
@@ -75,6 +79,13 @@ def get_minibatch(roidb, num_classes, mode='test'):
             # gt boxes: (x1, y1, x2, y2, cls)
             gt_inds = np.where(roidb[0]['gt_classes'] != 0)[0]
             gt_boxes = np.empty((roidb[0]['boxes'].shape[0], 5), dtype=np.float32)
+            """这里gt_inds中加入的判断其实应该是不会过滤到任何一个box的，因为如果
+            过滤掉了一个box，那么后续的对gt_boxes的赋值就会出错，因为gt_boxes的shape
+            和roidb中boxes的shape是一样大小的，而下面的赋值中却使用了gt_inds中的下标
+            如果gt_inds中有过滤，那么下面的赋值机会失败
+            """
+            # print "gt_inds shape: %s" % (str(len(gt_inds)))
+            # print "boxes shape: %s" % (str(roidb[0]['boxes'].shape))
             gt_boxes[:, 0:4] = roidb[0]['boxes'][gt_inds, :] * im_scales[0]
             gt_boxes[:, 4] = roidb[0]['gt_classes'][gt_inds]
             label = {'gt_boxes': gt_boxes}
