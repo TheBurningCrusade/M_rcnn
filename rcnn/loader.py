@@ -345,11 +345,16 @@ class AnchorLoader(mx.io.DataIter):
             for data, label in zip(data_list, label_list):
                 # infer label shape
                 data_shape = {k: v.shape for k, v in data.items()}
+                print "before data shape: %s" % (str(data_shape))
                 del data_shape['im_info']
+                print "after data shape: %s" % (str(data_shape))
                 _, feat_shape, _ = self.feat_sym.infer_shape(**data_shape)
+                print "infer output shape: %s" % (str(feat_shape))
                 feat_shape = [int(i) for i in feat_shape[0]]
+                print "feat_shape: %s" % (str(feat_shape))
 
                 # assign anchor for label
+                # print "before im_info: %s" % (str(data["im_info"]))
                 label = minibatch.assign_anchor(feat_shape, label['gt_boxes'], data['im_info'],
                                                 self.feat_stride, self.anchor_scales,
                                                self.anchor_ratios, self.allowed_border)

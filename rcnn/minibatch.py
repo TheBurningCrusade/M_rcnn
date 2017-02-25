@@ -68,7 +68,7 @@ def get_minibatch(roidb, num_classes, mode='test'):
 
         print "len(roidb): %s" % (str(len(roidb)))
         print "len(im_scales): %s" % (str(len(im_scales)))
-
+        # im_info 中存储图片的高度，宽度，图片的缩放比例
         im_info = np.array([[im_array.shape[2], im_array.shape[3], im_scales[0]]], dtype=np.float32)
 
         data = {'data': im_array,
@@ -290,6 +290,7 @@ def assign_anchor(feat_shape, gt_boxes, im_info, feat_stride=16,
         return bbox_transform(ex_rois, gt_rois[:, :4]).astype(np.float32, copy=False)
 
     DEBUG = False
+    # print "In assign_anchor im_info: %s" % (str(im_info))
     im_info = im_info[0]
     scales = np.array(scales, dtype=np.float32)
     base_anchors = generate_anchors(base_size=16, ratios=list(ratios), scales=scales)
