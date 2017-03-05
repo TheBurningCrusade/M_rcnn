@@ -309,17 +309,69 @@ def assign_anchor(feat_shape, gt_boxes, im_info, feat_stride=16,
         print 'gt_boxes', gt_boxes
 
     # 1. generate proposals from bbox deltas and shifted anchors
+    # 对卷积后的输出图片的每一个点进行遍历,只是对每一步设置了一个跨度
+    # 这个跨度应该也不是随便设置的，应该是最初图片到最终卷积出图片的
+    # 一个缩小程度，即缩小了16倍，这样feat_stride才设置成了16
     shift_x = np.arange(0, feat_width) * feat_stride
     shift_y = np.arange(0, feat_height) * feat_stride
+    """"
+    print "shift_x: %s" % (shift_x)
+    print "shift_y: %s" % (shift_y)
+    print "shift_x shape: %s" % (str(shift_x.shape))
+    print "shift_y shape: %s" % (str(shift_y.shape))"""
+
     shift_x, shift_y = np.meshgrid(shift_x, shift_y)
+    """"
+    print "After shift_x: %s" % (shift_x)
+    print "After shift_y: %s" % (shift_y)
+    print "After shift_x shape: %s" % (str(shift_x.shape))
+    print "After shift_y shape: %s" % (str(shift_y.shape))
+    print "shift_x ravel: %s" % (str(shift_x.ravel()))
+    print "shift_y ravel: %s" % (str(shift_y.ravel()))"""
+    """
+    假设一个矩阵有３行５列，那么np.meshgrid就会生成连个３行５列的矩阵
+             [[0,1,2,3,4]    　         [[0,0,0,0,0]
+    shif_x = [0,1,2,3,4]   和 shift_y = [1,1,1,1,1]  在这里如果使用vstack和transpose()
+             [0,1,2,3,4]]               [2,2,2,2,2]] 
+    就可以按照行优先的顺序遍历整个原始的３行5列的矩阵，即生成他们的遍历他们的下标.
+    np.vstack((shift_x.ravel()),(shift_y.ravel())).tranpos()就会生成一个二维矩阵
+    [[0,0],[0,1], [0,2], [0,3], [0,4], [1,0], [1,1], [1,2], .............]
+    如果按照行来遍历的话就是一个按行遍历原始矩阵的下标矩阵
+    """
+
+    """
+    a = np.array([[[1,2,3,4],[-1,-2,-3,-4],[5,6,7,8]]])
+    a.shape #(1, 3, 4)
+    b = np.array([[[6,7,8,9]],[[10,11,12,13]],[[14,15,16,17]],[[18,19,20,21]]])
+    a+b
+    array([[[ 7,  9, 11, 13],[ 5,  5,  5,  5], [11, 13, 15, 17]],
+           [[11, 13, 15, 17],[ 9,  9,  9,  9], [15, 17, 19, 21]],
+           [[15, 17, 19, 21],[13, 13, 13, 13], [19, 21, 23, 25]],
+           [[19, 21, 23, 25],[17, 17, 17, 17], [23, 25, 27, 29]]])
+    """
+
     shifts = np.vstack((shift_x.ravel(), shift_y.ravel(), shift_x.ravel(), shift_y.ravel())).transpose()
+    print "shifts: %s" % (str(shifts))
+
     # add A anchors (1, A, 4) to
     # cell K shifts (K, 1, 4) to get
     # shift anchors (K, A, 4)
     # reshape to (K*A, 4) shifted anchors
+    """
+    anchors中每一个元素有４个数字组成,比如(-176,-88,191,103)，代表的意思是
+    如果个一个坐标点(x1,y1,x2,y2)，其中(x1,y1)代表左上点的坐标，(x2,y2)代表
+    右下点的坐标，那么anchor代表这些对应坐标的移动值，(x1-176,y1-88,x2+191,y2+103)
+    这里本例中x1=x2且y1=y2就表示是对一个点进行移动，分别移动到左上和右下构成一个矩形
+    """
     A = num_anchors
     K = shifts.shape[0]
     all_anchors = base_anchors.reshape((1, A, 4)) + shifts.reshape((1, K, 4)).transpose((1, 0, 2))
+    print "base_anchors: %s" % (str(base_anchors.reshape((1,A,4))))
+    print "base_anchors shape: %s" % (str(base_anchors.reshape((1,A,4)).shape))
+    print "shifts: %s" % (str(shifts.reshape((1, K, 4)).transpose((1, 0, 2))))
+    print "shifts shape: %s" % (str(shifts.reshape((1, K, 4)).transpose((1, 0, 2)).shape))
+    print "all_anchors: %s" % (str(all_anchors))
+    print "all_anchors shape: %s" % (str(all_anchors.shape))
     all_anchors = all_anchors.reshape((K * A, 4))
     total_anchors = int(K * A)
 

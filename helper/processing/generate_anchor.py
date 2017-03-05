@@ -47,7 +47,7 @@ def _mkanchors(ws, hs, x_ctr, y_ctr):
     #print "add newaxis ws: %s" % (str(ws))
     #print "add newaxis hs: %s" % (str(hs))
     
-    #左下点的坐标和右上点的坐标
+    #左上点的坐标和右下点的坐标
     anchors = np.hstack((x_ctr - 0.5 * (ws - 1),
                          y_ctr - 0.5 * (hs - 1),
                          x_ctr + 0.5 * (ws - 1),
