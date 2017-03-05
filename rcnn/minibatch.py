@@ -375,7 +375,7 @@ def assign_anchor(feat_shape, gt_boxes, im_info, feat_stride=16,
     all_anchors = all_anchors.reshape((K * A, 4))
     total_anchors = int(K * A)
 
-    # only keep anchors inside the image
+    # only keep anchors inside the image 如英文解释
     inds_inside = np.where((all_anchors[:, 0] >= -allowed_border) &
                            (all_anchors[:, 1] >= -allowed_border) &
                            (all_anchors[:, 2] < im_info[1] + allowed_border) &
@@ -398,16 +398,36 @@ def assign_anchor(feat_shape, gt_boxes, im_info, feat_stride=16,
         # overlaps (ex, gt)
         overlaps = bbox_overlaps(anchors.astype(np.float), gt_boxes.astype(np.float))
         argmax_overlaps = overlaps.argmax(axis=1)
+        # 一个anchor和一幅图上的标记的哪一个物体具有最大的覆盖度
         max_overlaps = overlaps[np.arange(len(inds_inside)), argmax_overlaps]
+        print "max_overlaps: %s" % (str(max_overlaps))
         gt_argmax_overlaps = overlaps.argmax(axis=0)
+        # 按列进行排序的行号,即第一列中最大的行号，第二列中最大的行号，.....
+        # 一幅图上标记的每一个物体和哪一anchor的覆盖面积是最大的
         gt_max_overlaps = overlaps[gt_argmax_overlaps, np.arange(overlaps.shape[1])]
+        print "gt_max_overlaps: %s" % (str(gt_max_overlaps))
+        """np.where的一些注意，比如如下例子
+        a = np.array([[7, 2, 3],[4, 5, 6]])
+        b = np.array([4, 2, 3])
+        a == b
+        array([[False,  True,  True], [ True, False, False]], dtype=bool)
+        np.where(a==b)
+        (array([0, 0, 1]), array([1, 2, 0]))
+        如上np.where的结果就是a==b中等于True的下标的值，但是这里要注意下标的
+        顺序并不是查找b中元素的顺序，而是a==b结果举矩阵中先遍历第一行在遍历
+        第二行的顺序得到的，例如第一个[0,1]就是指a==b结果中第一行第二列的下标
+        而不是指b中4的下标[1,0]虽然4是b中的第一个元素
+        """
+        # 通过上述讲解，可知这里对gt_argmax_overlaps进行从新按行排序，之前是按列排序
         gt_argmax_overlaps = np.where(overlaps == gt_max_overlaps)[0]
 
         if not config.TRAIN.RPN_CLOBBER_POSITIVES:
             # assign bg labels first so that positive labels can clobber them
+            # labels中的判断会自动转化为下标
             labels[max_overlaps < config.TRAIN.RPN_NEGATIVE_OVERLAP] = 0
 
         # fg label: for each gt, anchor with highest overlap
+        # 将一副图中标记的n个物体中，和他们覆盖度最大的anchor标记成正样本
         labels[gt_argmax_overlaps] = 1
 
         # fg label: above threshold IoU
