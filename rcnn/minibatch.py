@@ -343,6 +343,7 @@ def assign_anchor(feat_shape, gt_boxes, im_info, feat_stride=16,
     a = np.array([[[1,2,3,4],[-1,-2,-3,-4],[5,6,7,8]]])
     a.shape #(1, 3, 4)
     b = np.array([[[6,7,8,9]],[[10,11,12,13]],[[14,15,16,17]],[[18,19,20,21]]])
+    b.shape #(4, 1, 4)
     a+b
     array([[[ 7,  9, 11, 13],[ 5,  5,  5,  5], [11, 13, 15, 17]],
            [[11, 13, 15, 17],[ 9,  9,  9,  9], [15, 17, 19, 21]],
@@ -365,6 +366,8 @@ def assign_anchor(feat_shape, gt_boxes, im_info, feat_stride=16,
     """
     A = num_anchors
     K = shifts.shape[0]
+
+    # 对每一个shift点都让他和所有anchor进行位移运算
     all_anchors = base_anchors.reshape((1, A, 4)) + shifts.reshape((1, K, 4)).transpose((1, 0, 2))
     print "base_anchors: %s" % (str(base_anchors.reshape((1,A,4))))
     print "base_anchors shape: %s" % (str(base_anchors.reshape((1,A,4)).shape))
@@ -487,6 +490,7 @@ def assign_anchor(feat_shape, gt_boxes, im_info, feat_stride=16,
         print 'stdevs', stds
 
     # map up to original set of anchors
+    # print "labels: %s" % (str(labels))
     labels = _unmap(labels, total_anchors, inds_inside, fill=-1)
     bbox_targets = _unmap(bbox_targets, total_anchors, inds_inside, fill=0)
     bbox_inside_weights = _unmap(bbox_inside_weights, total_anchors, inds_inside, fill=0)

@@ -362,11 +362,17 @@ class AnchorLoader(mx.io.DataIter):
                 new_label_list.append(label)
 
             all_data = dict()
+            # 对于每次只有一幅图来说，这里的tensor_vstack是不起作用的
+            # print "data_list: %s" % (str(data_list))
             for key in ['data']:
                 all_data[key] = tensor_vstack([batch[key] for batch in data_list])
+            # print "all_data[key]: %s" % (str(all_data[key]))
 
             all_label = dict()
+            # print "len new label list: %s" % (len(new_label_list))
+            # print "new label list: %s" % (str(new_label_list[0]['label']))
             all_label['label'] = tensor_vstack([batch['label'] for batch in new_label_list], pad=-1)
+            # print "all_label: %s" % (str(all_label["label"]))
             for key in ['bbox_target', 'bbox_inside_weight', 'bbox_outside_weight']:
                 all_label[key] = tensor_vstack([batch[key] for batch in new_label_list])
 
