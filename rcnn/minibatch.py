@@ -251,7 +251,7 @@ def sample_rois(roidb, fg_rois_per_image, rois_per_image, num_classes):
 
     return rois, labels, bbox_targets, bbox_inside_weights, overlaps
 
-
+# 该函数操作的一副图经过卷积网络后的输出，即feat_shape
 def assign_anchor(feat_shape, gt_boxes, im_info, feat_stride=16,
                   scales=(8, 16, 32), ratios=(0.5, 1, 2), allowed_border=0):
     """

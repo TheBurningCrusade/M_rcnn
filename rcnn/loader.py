@@ -342,6 +342,7 @@ class AnchorLoader(mx.io.DataIter):
                 print "data[data] shape: %s" % (str(data["data"].shape))
 
             new_label_list = []
+            # 这里的循环的基本单位是一幅图
             for data, label in zip(data_list, label_list):
                 # infer label shape
                 data_shape = {k: v.shape for k, v in data.items()}
