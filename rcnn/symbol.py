@@ -197,6 +197,13 @@ def get_vgg_rpn(num_classes=21, num_anchors=9):
         data=rpn_relu, kernel=(1, 1), pad=(0, 0), num_filter=4 * num_anchors, name="rpn_bbox_pred")
 
     # prepare rpn data
+    # numpy中的array的reshape没有shape的开头为0的情况，通过实例运行可以知道，
+    #开头为0即是这一维度保持不变
+    """fuck = mx.symbol.Variable(name="data", shape=(9,4,3,4))
+    reshape = mx.symbol.Reshape(data=fuck, shape=(0,2,-1), name="reshape")
+    print "reshape: %s" % (reshape.infer_shape(),)
+    reshape: ([(9L, 4L, 3L, 4L)], [(9L, 2L, 24L)], [])"""
+
     rpn_cls_score_reshape = mx.symbol.Reshape(
         data=rpn_cls_score, shape=(0, 2, -1), name="rpn_cls_score_reshape")
 
