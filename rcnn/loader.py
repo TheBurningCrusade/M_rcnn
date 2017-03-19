@@ -222,6 +222,13 @@ class AnchorLoader(mx.io.DataIter):
         self.batch = None
         self.data = None
         self.label = None
+        """ 这一次将batch的data和label载入进data和label中, get_batch除了
+        在初始化的时候被调用一次，其他时候并不会被直接调用，而是由next直接
+        掉用，next会修改self.cur的值，然后执行get_batch，但是这里有一个问题
+        初始化一个对象时调用完get_batch之后，并没有修改self.cur，所以第一次
+        执行next时，和初始化对象调用的get_batch是对同一个batch进行的操作，
+        即这里进行了重复的操作
+        """
         self.get_batch()
         self.data_name = ['data', 'im_info']
         self.label_name = ['label', 'bbox_target', 'bbox_inside_weight', 'bbox_outside_weight']
@@ -336,6 +343,12 @@ class AnchorLoader(mx.io.DataIter):
             print "data_tensor element's shape: %s" % (str(data_test[0].shape))
 
             # print "data_list len: %s" % (str(len(data_list)))
+            # a = np.array([[1,2],[4,5]])
+            # for x  in a:
+            # ...     print x
+            # ... 
+            # [1 2]
+            # [4 5]
             for data, data_pad in zip(data_list, data_tensor):
                 print "data_pad shape %s" % (str(data_pad.shape))
                 data['data'] = data_pad[np.newaxis, :]

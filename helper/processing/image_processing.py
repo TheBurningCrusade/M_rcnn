@@ -113,14 +113,14 @@ def tensor_vstack(tensor_list, pad=0):
     """
     """该函数主要功能是将tensor_list中的矩阵进行对其，对其的规则是使用某一维度下
     各个元素在这个维度上的上的最大值，其他达不到这个最大值的元素要按这个最大维度
-    进行补齐"""
+    进行补齐, 注意在补齐的过程中，矩阵的维度是不变的,即输入和输出的维度是一样的"""
     # print "tensor_list[0].shape"
     # print tensor_list[0].shape
     ndim = len(tensor_list[0].shape)
     if ndim == 1:
         return np.hstack(tensor_list)
     dimensions = [0]
-    # 寻找各个维度下，各元素在这个维度的最大值
+    # 寻找各个维度下，各元素在这个维度的最大值, 但是对第一维不做处理
     for dim in range(1, ndim):
         dimensions.append(max([tensor.shape[dim] for tensor in tensor_list]))
     # 使用最大维度进行补齐,这是都是单方向的补齐，往下或者往右

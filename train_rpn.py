@@ -47,6 +47,8 @@ def train_net(image_set, year, root_path, devkit_path, pretrained, epoch,
     # infer max shape
     max_data_shape = [('data', (config.TRAIN.BATCH_SIZE, 3, 1000, 1000))]
     max_data_shape_dict = {k: v for k, v in max_data_shape}
+    # max_data_shape_dict = {"data" : (1, 3, 1000, 1000)} 这个和AnchorLoader
+    # 中的feat_sym中的作用是一样的，获取中奖网络的输出
     _, feat_shape, _ = feat_sym.infer_shape(**max_data_shape_dict)
     from rcnn.minibatch import assign_anchor
     import numpy as np
