@@ -44,7 +44,6 @@ def train_net(image_set, year, root_path, devkit_path, pretrained, epoch,
     train_data = AnchorLoader(feat_sym, roidb, batch_size=config.TRAIN.BATCH_SIZE, shuffle=True, mode='train',
                               ctx=ctx, work_load_list=work_load_list)
 
-    """
     # infer max shape
     max_data_shape = [('data', (config.TRAIN.BATCH_SIZE, 3, 1000, 1000))]
     max_data_shape_dict = {k: v for k, v in max_data_shape}
@@ -100,6 +99,7 @@ def train_net(image_set, year, root_path, devkit_path, pretrained, epoch,
                         'lr_scheduler': mx.lr_scheduler.FactorScheduler(60000, 0.1),
                         'rescale_grad': (1.0 / config.TRAIN.BATCH_SIZE)}
 
+    """
     # train
     mod = MutableModule(sym, data_names=data_names, label_names=label_names,
                         logger=logger, context=ctx, work_load_list=work_load_list,

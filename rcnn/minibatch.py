@@ -368,6 +368,7 @@ def assign_anchor(feat_shape, gt_boxes, im_info, feat_stride=16,
     K = shifts.shape[0]
 
     # 对每一个shift点都让他和所有anchor进行位移运算
+    # all_anchores = (K,A,4)
     all_anchors = base_anchors.reshape((1, A, 4)) + shifts.reshape((1, K, 4)).transpose((1, 0, 2))
     print "base_anchors: %s" % (str(base_anchors.reshape((1,A,4))))
     print "base_anchors shape: %s" % (str(base_anchors.reshape((1,A,4)).shape))
@@ -376,6 +377,12 @@ def assign_anchor(feat_shape, gt_boxes, im_info, feat_stride=16,
     print "all_anchors: %s" % (str(all_anchors))
     print "all_anchors shape: %s" % (str(all_anchors.shape))
     all_anchors = all_anchors.reshape((K * A, 4))
+    """这里total_anchors的被reshape成了一个二维矩阵，矩阵的排列并没有变，相当于每一个点
+    都有A个anchor对其进行作用，一共有K个点，矩阵排列的顺序是先按K个点，然后按A个anchor
+    注意：后面 label,bbox_target,bbox_inside_weight,bbox_outside_weight的设置顺序和total_anchor
+    的是一样的，这样才能保持数据的整齐性，label中的设置顺序是
+    ((1, feat_height, feat_width, A)).transpose(0, 3, 1, 2) 其中K=feat_height*feat_width
+    """
     total_anchors = int(K * A)
 
     # only keep anchors inside the image 如英文解释
