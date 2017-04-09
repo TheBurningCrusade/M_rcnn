@@ -1,3 +1,4 @@
+#-*-coding:utf-8-*-
 import argparse
 import logging
 import os
@@ -48,7 +49,7 @@ def train_net(image_set, year, root_path, devkit_path, pretrained, epoch,
     max_data_shape = [('data', (config.TRAIN.BATCH_SIZE, 3, 1000, 1000))]
     max_data_shape_dict = {k: v for k, v in max_data_shape}
     # max_data_shape_dict = {"data" : (1, 3, 1000, 1000)} 这个和AnchorLoader
-    # 中的feat_sym中的作用是一样的，获取中奖网络的输出
+    # 中的feat_sym中的作用是一样的，获取中间网络的输出
     _, feat_shape, _ = feat_sym.infer_shape(**max_data_shape_dict)
     from rcnn.minibatch import assign_anchor
     import numpy as np
@@ -69,8 +70,10 @@ def train_net(image_set, year, root_path, devkit_path, pretrained, epoch,
         arg_shape_dict = dict(zip(sym.list_arguments(), arg_shape))
         args['rpn_conv_3x3_weight'] = mx.random.normal(0, 0.01, shape=arg_shape_dict['rpn_conv_3x3_weight'])
         args['rpn_conv_3x3_bias'] = mx.nd.zeros(shape=arg_shape_dict['rpn_conv_3x3_bias'])
+
         args['rpn_cls_score_weight'] = mx.random.normal(0, 0.01, shape=arg_shape_dict['rpn_cls_score_weight'])
         args['rpn_cls_score_bias'] = mx.nd.zeros(shape=arg_shape_dict['rpn_cls_score_bias'])
+
         args['rpn_bbox_pred_weight'] = mx.random.normal(0, 0.01, shape=arg_shape_dict['rpn_bbox_pred_weight'])
         args['rpn_bbox_pred_bias'] = mx.nd.zeros(shape=arg_shape_dict['rpn_bbox_pred_bias'])
 

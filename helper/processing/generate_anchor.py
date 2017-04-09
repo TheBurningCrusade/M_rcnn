@@ -63,6 +63,7 @@ def _ratio_enum(anchor, ratios):
     print "Before _ratio_enum anchor: %s" % (str(anchor))
     w, h, x_ctr, y_ctr = _whctrs(anchor)
     size = w * h # 宽和高相乘
+    # ratios是数组，所以在这里anchors变成了多个
     size_ratios = size / ratios
     ws = np.round(np.sqrt(size_ratios)) # 相当于size 除以ratios 在开方
     hs = np.round(ws * ratios) # 相当于sqrt(size/ratios) * ratios

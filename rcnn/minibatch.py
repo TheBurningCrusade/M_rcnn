@@ -68,7 +68,7 @@ def get_minibatch(roidb, num_classes, mode='test'):
 
         print "len(roidb): %s" % (str(len(roidb)))
         print "len(im_scales): %s" % (str(len(im_scales)))
-        # im_info 中存储图片的高度，宽度，图片的缩放比例
+        # im_info 中存储图片的高度，宽度，图片的缩放比例, 因为这里BATCH_SIZE=1，所以只有一副图片
         im_info = np.array([[im_array.shape[2], im_array.shape[3], im_scales[0]]], dtype=np.float32)
 
         data = {'data': im_array,

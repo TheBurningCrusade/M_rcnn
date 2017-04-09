@@ -305,8 +305,8 @@ class AnchorLoader(mx.io.DataIter):
                 "Invalid settings for work load. "
             # _split_input_slice这个函数返回一个list，其中每个元素的类型为slice
             # slice是一个三元组(start, stop, 未知(None有时取这个值)), 这里应该
-            # 是为每个显卡分配一个含有batch_size个数据集, 即如果有3个显卡，那么
-            # 将返回一个3个slice组成的list，其中每个slice中包含一个batch的数据索引
+            # 是为每个显卡分配一个含有(stop - start) +１个数据集, 即如果有3个显卡，那么
+            # 将返回一个3个slice组成的list，其中每个slice中包含一个batch的中数据的索引范围
             slices = _split_input_slice(self.batch_size, work_load_list)
             print "slices: %s" % (str(slices))
             # print "type slices: %s" % (type(slices))
