@@ -54,6 +54,7 @@ def train_net(image_set, year, root_path, devkit_path, pretrained, epoch,
     from rcnn.minibatch import assign_anchor
     import numpy as np
     label = assign_anchor(feat_shape[0], np.zeros((0, 5)), [[1000, 1000, 1.0]])
+    print "label shape: %s" % (str(label["label"].shape))
     max_label_shape = [('label', label['label'].shape),
                        ('bbox_target', label['bbox_target'].shape),
                        ('bbox_inside_weight', label['bbox_inside_weight'].shape),
@@ -66,8 +67,13 @@ def train_net(image_set, year, root_path, devkit_path, pretrained, epoch,
     # initialize params
     if not resume:
         input_shapes = {k: v for k, v in train_data.provide_data + train_data.provide_label}
-        arg_shape, _, _ = sym.infer_shape(**input_shapes)
+        print "input shapes: %s" % (str(input_shapes))
+        # input shapes: {'bbox_target': (1L, 36L, 37L, 37L), 'bbox_outside_weight': (1L, 36L, 37L, 37L), 'data': (1L, 3L, 600L, 600L), 'bbox_inside_weight': (1L, 36L, 37L, 37L), 'label': (1L, 12321L)}
+
+        arg_shape, out_shape, _ = sym.infer_shape(**input_shapes)
         arg_shape_dict = dict(zip(sym.list_arguments(), arg_shape))
+
+        print "out_shape: %s" % (str(out_shape))
         args['rpn_conv_3x3_weight'] = mx.random.normal(0, 0.01, shape=arg_shape_dict['rpn_conv_3x3_weight'])
         args['rpn_conv_3x3_bias'] = mx.nd.zeros(shape=arg_shape_dict['rpn_conv_3x3_bias'])
 
