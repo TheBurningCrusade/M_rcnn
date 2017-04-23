@@ -10,7 +10,7 @@ def bbox_transform(ex_rois, gt_rois):
     compute bounding box regression targets from ex_rois to gt_rois
     :param ex_rois: [N, 4]
     :param gt_rois: [N, 4]
-    :return: [N, 4]
+    :return: [N, 4] (dx, dy, dw, dh)
     """
     ex_widths = ex_rois[:, 2] - ex_rois[:, 0] + 1.0
     ex_heights = ex_rois[:, 3] - ex_rois[:, 1] + 1.0

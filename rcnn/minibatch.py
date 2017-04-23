@@ -349,6 +349,20 @@ def assign_anchor(feat_shape, gt_boxes, im_info, feat_stride=16,
            [[11, 13, 15, 17],[ 9,  9,  9,  9], [15, 17, 19, 21]],
            [[15, 17, 19, 21],[13, 13, 13, 13], [19, 21, 23, 25]],
            [[19, 21, 23, 25],[17, 17, 17, 17], [23, 25, 27, 29]]])
+
+    (a+b).reshape(12,4)
+    array([[ 7,  9, 11, 13],
+           [ 5,  5,  5,  5],
+           [11, 13, 15, 17],
+           [11, 13, 15, 17],
+           [ 9,  9,  9,  9],
+           [15, 17, 19, 21],
+           [15, 17, 19, 21],
+           [13, 13, 13, 13],
+           [19, 21, 23, 25],
+           [19, 21, 23, 25],
+           [17, 17, 17, 17],
+           [23, 25, 27, 29]])
     """
 
     shifts = np.vstack((shift_x.ravel(), shift_y.ravel(), shift_x.ravel(), shift_y.ravel())).transpose()
@@ -368,7 +382,7 @@ def assign_anchor(feat_shape, gt_boxes, im_info, feat_stride=16,
     K = shifts.shape[0]
 
     # 对每一个shift点都让他和所有anchor进行位移运算
-    # all_anchores = (K,A,4)
+    # all_anchores = (K,A,4), 相加的结果就是为每个像素都生成A个anchor，其中
     all_anchors = base_anchors.reshape((1, A, 4)) + shifts.reshape((1, K, 4)).transpose((1, 0, 2))
     print "base_anchors: %s" % (str(base_anchors.reshape((1,A,4))))
     print "base_anchors shape: %s" % (str(base_anchors.reshape((1,A,4)).shape))
@@ -515,6 +529,24 @@ def assign_anchor(feat_shape, gt_boxes, im_info, feat_stride=16,
 
     labels = labels.reshape((1, feat_height, feat_width, A)).transpose(0, 3, 1, 2)
     labels = labels.reshape((1, A * feat_height * feat_width))
+    print "before reshape bbox_targets: %s" % (str(bbox_targets.shape))
+    """a = np.array([[1,2,3,4], [4,5,6,7], [9,10,11,12], [13,14,15,16], [17,8,18,19], [20,21,22,23]])
+    a.reshape(1,3,8)
+    array([[[ 1,  2,  3,  4,  4,  5,  6,  7],
+            [ 9, 10, 11, 12, 13, 14, 15, 16],
+            [17,  8, 18, 19, 20, 21, 22, 23]]])
+    a.reshape(1,3,8).transpose(0,2,1)
+    array([[[ 1,  9, 17],
+             [ 2, 10,  8],
+             [ 3, 11, 18],
+             [ 4, 12, 19],
+             [ 4, 13, 20],
+             [ 5, 14, 21],
+             [ 6, 15, 22],
+             [ 7, 16, 23]]])
+    这里A=9对应不同的Anchors，每个anchor有４个实数值表示(dx, dy, dw, dh)，这里对bbox_targets
+    和其他数据进行reshape之后，对于一个经过卷积后的像素，它对饮的36个元素的分成9份，其中每四个
+    代表一个anchor"""
     bbox_targets = bbox_targets.reshape((1, feat_height, feat_width, A * 4)).transpose(0, 3, 1, 2)
     bbox_inside_weights = bbox_inside_weights.reshape((1, feat_height, feat_width, A * 4)).transpose((0, 3, 1, 2))
     bbox_outside_weights = bbox_outside_weights.reshape((1, feat_height, feat_width, A * 4)).transpose((0, 3, 1, 2))
