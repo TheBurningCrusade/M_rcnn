@@ -338,9 +338,9 @@ class AnchorLoader(mx.io.DataIter):
             # pad data first and then assign anchor (read label)
             data_tensor = tensor_vstack([batch['data'] for batch in data_list])
             #print "data_tensor type: %s" % (type(data_tensor)) # numpy.ndarray
-            print "data_tensor shape: %s" % (str(data_tensor.shape))
+            #print "data_tensor shape: %s" % (str(data_tensor.shape))
             data_test = [batch['data'] for batch in data_list]
-            print "data_tensor element's shape: %s" % (str(data_test[0].shape))
+            #print "data_tensor element's shape: %s" % (str(data_test[0].shape))
 
             # print "data_list len: %s" % (str(len(data_list)))
             # a = np.array([[1,2],[4,5]])
@@ -350,22 +350,22 @@ class AnchorLoader(mx.io.DataIter):
             # [1 2]
             # [4 5]
             for data, data_pad in zip(data_list, data_tensor):
-                print "data_pad shape %s" % (str(data_pad.shape))
+                #print "data_pad shape %s" % (str(data_pad.shape))
                 data['data'] = data_pad[np.newaxis, :]
-                print "data[data] shape: %s" % (str(data["data"].shape))
+                #print "data[data] shape: %s" % (str(data["data"].shape))
 
             new_label_list = []
             # 这里的循环的基本单位是一幅图
             for data, label in zip(data_list, label_list):
                 # infer label shape
                 data_shape = {k: v.shape for k, v in data.items()}
-                print "before data shape: %s" % (str(data_shape))
+                #print "before data shape: %s" % (str(data_shape))
                 del data_shape['im_info']
-                print "after data shape: %s" % (str(data_shape))
+                #print "after data shape: %s" % (str(data_shape))
                 _, feat_shape, _ = self.feat_sym.infer_shape(**data_shape)
-                print "infer output shape: %s" % (str(feat_shape))
+                #print "infer output shape: %s" % (str(feat_shape))
                 feat_shape = [int(i) for i in feat_shape[0]]
-                print "feat_shape: %s" % (str(feat_shape))
+                #print "feat_shape: %s" % (str(feat_shape))
 
                 # assign anchor for label
                 # print "before im_info: %s" % (str(data["im_info"]))

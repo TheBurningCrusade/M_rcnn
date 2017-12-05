@@ -384,12 +384,12 @@ def assign_anchor(feat_shape, gt_boxes, im_info, feat_stride=16,
     # 对每一个shift点都让他和所有anchor进行位移运算
     # all_anchores = (K,A,4), 相加的结果就是为每个像素都生成A个anchor，其中
     all_anchors = base_anchors.reshape((1, A, 4)) + shifts.reshape((1, K, 4)).transpose((1, 0, 2))
-    print "base_anchors: %s" % (str(base_anchors.reshape((1,A,4))))
+    """print "base_anchors: %s" % (str(base_anchors.reshape((1,A,4))))
     print "base_anchors shape: %s" % (str(base_anchors.reshape((1,A,4)).shape))
     print "shifts: %s" % (str(shifts.reshape((1, K, 4)).transpose((1, 0, 2))))
     print "shifts shape: %s" % (str(shifts.reshape((1, K, 4)).transpose((1, 0, 2)).shape))
     print "all_anchors: %s" % (str(all_anchors))
-    print "all_anchors shape: %s" % (str(all_anchors.shape))
+    print "all_anchors shape: %s" % (str(all_anchors.shape))"""
     all_anchors = all_anchors.reshape((K * A, 4))
     """这里total_anchors的被reshape成了一个二维矩阵，矩阵的排列并没有变，相当于每一个点
     都有A个anchor对其进行作用，一共有K个点，矩阵排列的顺序是先按K个点，然后按A个anchor
@@ -424,12 +424,12 @@ def assign_anchor(feat_shape, gt_boxes, im_info, feat_stride=16,
         argmax_overlaps = overlaps.argmax(axis=1)
         # 一个anchor和一幅图上的标记的哪一个物体具有最大的覆盖度
         max_overlaps = overlaps[np.arange(len(inds_inside)), argmax_overlaps]
-        print "max_overlaps: %s" % (str(max_overlaps))
+        #print "max_overlaps: %s" % (str(max_overlaps))
         gt_argmax_overlaps = overlaps.argmax(axis=0)
         # 按列进行排序的行号,即第一列中最大的行号，第二列中最大的行号，.....
         # 一幅图上标记的每一个物体和哪一anchor的覆盖面积是最大的
         gt_max_overlaps = overlaps[gt_argmax_overlaps, np.arange(overlaps.shape[1])]
-        print "gt_max_overlaps: %s" % (str(gt_max_overlaps))
+        #print "gt_max_overlaps: %s" % (str(gt_max_overlaps))
         """np.where的一些注意，比如如下例子
         a = np.array([[7, 2, 3],[4, 5, 6]])
         b = np.array([4, 2, 3])
@@ -529,7 +529,7 @@ def assign_anchor(feat_shape, gt_boxes, im_info, feat_stride=16,
 
     labels = labels.reshape((1, feat_height, feat_width, A)).transpose(0, 3, 1, 2)
     labels = labels.reshape((1, A * feat_height * feat_width))
-    print "before reshape bbox_targets: %s" % (str(bbox_targets.shape))
+    #print "before reshape bbox_targets: %s" % (str(bbox_targets.shape))
     """a = np.array([[1,2,3,4], [4,5,6,7], [9,10,11,12], [13,14,15,16], [17,8,18,19], [20,21,22,23]])
     a.reshape(1,3,8)
     array([[[ 1,  2,  3,  4,  4,  5,  6,  7],
