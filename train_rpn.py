@@ -109,9 +109,10 @@ def train_net(image_set, year, root_path, devkit_path, pretrained, epoch,
                         'learning_rate': 0.001,
                         'lr_scheduler': mx.lr_scheduler.FactorScheduler(60000, 0.1),
                         'rescale_grad': (1.0 / config.TRAIN.BATCH_SIZE)}
-
-    """
     # train
+    print "train****"
+    print "begin_epoch: %s" % (begin_epoch)
+    print "end_epoch: %s" % (num_epoch)
     mod = MutableModule(sym, data_names=data_names, label_names=label_names,
                         logger=logger, context=ctx, work_load_list=work_load_list,
                         max_data_shapes=max_data_shape, max_label_shapes=max_label_shape)
@@ -119,7 +120,6 @@ def train_net(image_set, year, root_path, devkit_path, pretrained, epoch,
             batch_end_callback=batch_end_callback, kvstore=kv_store,
             optimizer='sgd', optimizer_params=optimizer_params,
             arg_params=args, aux_params=auxs, begin_epoch=begin_epoch, num_epoch=end_epoch)
-    """
 
 
 def parse_args():
