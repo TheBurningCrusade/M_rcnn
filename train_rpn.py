@@ -112,7 +112,7 @@ def train_net(image_set, year, root_path, devkit_path, pretrained, epoch,
     # train
     print "train****"
     print "begin_epoch: %s" % (begin_epoch)
-    print "end_epoch: %s" % (num_epoch)
+    print "end_epoch: %s" % (end_epoch)
     mod = MutableModule(sym, data_names=data_names, label_names=label_names,
                         logger=logger, context=ctx, work_load_list=work_load_list,
                         max_data_shapes=max_data_shape, max_label_shapes=max_label_shape)
