@@ -339,7 +339,7 @@ def check_softmax_with_ignore_label(xpu):
     """这里有一点不太明白，如果label中有一个元素为0,则代表该向量是0向量，为什么它的残差都是0呢, 
     是不是因为一共有0代表不属于任何类别，所以残差为0。注意上述解释是不对的，label等于0的残差
     是因为我们在mx.symbol.SoftmaxOutput的参数中设置了ignore_label=0，所以等于0的残差的计算就被
-    忽略了，置为0"""
+    忽略了，置为0， label=0的残差和label=2或者1的残差是一样的"""
 
     print "l_np: %s" % (l_np)
 
